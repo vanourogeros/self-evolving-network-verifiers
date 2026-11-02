@@ -25,3 +25,7 @@ Open `docs/index.html` in a browser. No server is needed.
 GitHub Pages deploys the `docs/` folder of the `main` branch
 (Settings → Pages → Deploy from a branch → `main` / `/docs`).
 Pushing to `main` updates the live page within a minute or two.
+
+To update from the artifact source, run `./publish.sh` (it copies the site into
+`docs/` and stamps the file links with the source commit so browsers don't mix
+old cached scripts with the new page), then commit and push.
