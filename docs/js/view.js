@@ -668,12 +668,12 @@
       h("figcaption", { text: "The verifier and the reference answer the same test networks. Where their routes differ, the AI fixer edits the verifier's rules; where they agree, the AI tester looks for a harder network. The run ends when it finds none." }));
   }
 
-  // ---------- masthead ----------
+  // ---------- page top (story and explorer) ----------
 
-  function masthead(ctx, on) {
-    return h("div.masthead-play", null,
-      h("span.masthead-level", { text: ctx.content.title + " · reference: " + ctx.content.oracleName }),
-      h("button.btn-quiet", { type: "button", "data-focus-key": "other-level", on: { click: on.otherLevel } }, ctx.other.title + " →"));
+  function crumbs(ctx, on) {
+    return h("nav.crumbs", { "aria-label": "Pages" },
+      h("button.btn-quiet", { type: "button", "data-focus-key": "home", on: { click: on.home } }, "← " + TITLE),
+      h("button.btn-quiet", { type: "button", "data-focus-key": "other-level", on: { click: on.otherLevel } }, "Other example: " + ctx.other.title + " →"));
   }
 
   // ---------- landing ----------
@@ -695,14 +695,18 @@
     const section = (id, title, ...kids) => h("section.proj-sec", { "aria-labelledby": id }, h("h2#" + id + ".proj-h", { id, text: title }), kids);
     return h("div.screen.landing.wrap", null,
       h("header.proj-hero", null,
-        h("p.kicker", { text: "HotNets 2026" }),
         h("h1#landing-title.display", { id: "landing-title", tabindex: "-1", text: TITLE }),
-        h("p.paper-line", { text: "Ioannis Protogeros, Tibor Schneider, Laurent Vanbever · ETH Zürich" }),
-        // A button, not a #fragment link: the hash names the page's place (see story.js).
-        h("button.btn-secondary", { type: "button", "data-focus-key": "jump-try", on: { click: () => {
-          const el = document.getElementById("p-try");
-          if (el) { el.scrollIntoView({ block: "start" }); el.setAttribute("tabindex", "-1"); el.focus({ preventScroll: true }); }
-        } } }, "Jump to the examples ↓")),
+        h("p.authors", { text: "Ioannis Protogeros, Tibor Schneider, Laurent Vanbever" }),
+        h("p.affil", { text: "ETH Zürich" }),
+        h("p.venue", { text: "HotNets 2026" }),
+        h("div.hero-links", null,
+          // TODO: make this a link once the paper is posted.
+          h("span.pill.is-soon", { title: "The paper link will be added once it is posted" }, svgIcon("rules"), "Paper (coming soon)"),
+          // A button, not a #fragment link: the hash names the page's place (see story.js).
+          h("button.pill", { type: "button", "data-focus-key": "jump-try", on: { click: () => {
+            const el = document.getElementById("p-try");
+            if (el) { el.scrollIntoView({ block: "start" }); el.setAttribute("tabindex", "-1"); el.focus({ preventScroll: true }); }
+          } } }, svgIcon("net"), "Interactive examples ↓"))),
       section("p-problem", "The problem",
         h("p.lead", { text: "A network verifier checks a network's configuration before it goes live: will traffic still get through if any link fails, whatever routes the neighbors announce? A simulator can answer that for one failure at a time; a verifier answers for all of them at once. To do so, it needs rules for how routing works. Today experts write those rules by hand, feature by feature, and real routers often differ from the standards. Keeping them complete and correct never ends, so most networks are never verified." }),
         h("div.contrast", { role: "img", "aria-label": "Hand-written rules do not match what real routers do." },
@@ -1036,13 +1040,14 @@
     const nav = h("div.storynav", null,
       v > 0
         ? h("button.btn-quiet", { type: "button", "data-focus-key": "back", on: { click: () => on.go({ screen: "story", level: levelKey, v: v - 1, step: 0 }) } }, "← " + content.versions[v - 1].name + " version")
-        : h("button.btn-quiet", { type: "button", "data-focus-key": "back", on: { click: on.home } }, "← Start page"),
+        : h("button.btn-quiet", { type: "button", "data-focus-key": "back", on: { click: on.home } }, "← Project page"),
       h("button.btn-secondary", { type: "button", "data-focus-key": "explore", on: { click: () => on.explore({ v, card: card.id, option: oi }) } }, "Try another network"),
       v < 2
         ? h("button.btn-primary", { type: "button", "data-focus-key": "next", on: { click: () => on.go({ screen: "story", level: levelKey, v: v + 1, step: 0 }) } }, "Next: " + content.versions[v + 1].name + " version →")
         : h("button.btn-primary", { type: "button", "data-focus-key": "next", on: { click: on.otherLevel } }, "Next example: " + ctx.other.title + " →"));
 
     return h("section.screen.story.wrap", { "aria-labelledby": "step-title" },
+      crumbs(ctx, on),
       progress(ctx, on),
       h("div.step-head", null,
         h("p.kicker", { text: content.title + " · version " + (v + 1) + " of 3" }),
@@ -1092,6 +1097,7 @@
       : null;
 
     return h("section.screen.explore.wrap", { "aria-labelledby": "step-title" },
+      crumbs(ctx, on),
       h("div.step-head", null,
         h("p.kicker", { text: content.title + " · try another network" }),
         h("h1#step-title.display-sm", { id: "step-title", tabindex: "-1", text: "Try another network" }),
@@ -1105,7 +1111,7 @@
       quizPanel(ctx, on, ci, oi, v));
   }
 
-  HSA.view = { h, drawNet, masthead, landing, story, explore, compareRows,
+  HSA.view = { h, drawNet, landing, story, explore, compareRows,
     routeChain, routeEdges, deciderFor, mistakeFor, routerIds, ridLabel,
     hopShape, chipSpots, idSpots, positions, VIEW, ruleGapText, ruleChanges, TITLE,
     cardText, optionText, answerText, quizText, revealFacts };

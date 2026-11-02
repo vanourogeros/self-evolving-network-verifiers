@@ -102,7 +102,6 @@
   function render(opts) {
     const o = opts || {};
     const main = document.getElementById("app");
-    const slot = document.getElementById("masthead-slot");
     const active = document.activeElement;
     const focusKey = active && active.getAttribute ? active.getAttribute("data-focus-key") : null;
     const level = place.level;
@@ -118,7 +117,6 @@
     // Confetti belongs to the screen it was fired on.
     for (const c of document.querySelectorAll(".confetti")) c.remove();
     main.replaceChildren(screen);
-    slot.replaceChildren(ctx ? V.masthead(ctx, on) : "");
     document.body.setAttribute("data-screen", place.screen);
     document.title = ctx ? CONTENT[level].title + " · " + V.TITLE : V.TITLE;
 
@@ -170,6 +168,26 @@
     poke();
   }
 
+  // ---------- theme ----------
+
+  // Dark unless the visitor picked light; the pick is remembered where storage works.
+  function setupTheme() {
+    const html = document.documentElement;
+    const btn = document.getElementById("theme-toggle");
+    const apply = (theme) => {
+      if (theme === "light") html.setAttribute("data-theme", "light"); else html.removeAttribute("data-theme");
+      if (btn) btn.textContent = theme === "light" ? "Dark mode" : "Light mode";
+    };
+    let saved = null;
+    try { saved = root.localStorage.getItem("hsa-theme"); } catch (e) { /* no storage */ }
+    apply(saved);
+    if (btn) btn.addEventListener("click", () => {
+      const next = html.getAttribute("data-theme") === "light" ? "dark" : "light";
+      apply(next);
+      try { root.localStorage.setItem("hsa-theme", next); } catch (e) { /* no storage */ }
+    });
+  }
+
   // ---------- boot ----------
 
   function boot() {
@@ -177,7 +195,7 @@
       document.getElementById("app").replaceChildren(V.h("p.wrap", { text: "The level data did not load. Check that data/ and content/ sit next to index.html." }));
       return;
     }
-    document.getElementById("home").addEventListener("click", on.home);
+    setupTheme();
     root.addEventListener("hashchange", onHash);
     root.addEventListener("popstate", onHash);
     root.addEventListener("keydown", onKey);
