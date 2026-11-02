@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Self-Evolving Network Verifiers</title>
+  <meta name="description" content="An interactive companion to the HotNets 2026 paper Self-evolving network verifiers: three real versions of an AI-repaired verifier, the networks where each is wrong, the exact mistake and the repair.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip" href="#app">Skip to content</a>
+  <header class="masthead">
+    <div class="masthead-inner">
+      <button type="button" class="wordmark" id="home" data-focus-key="home">
+        <span class="wordmark-glyph" aria-hidden="true">&#x2234;</span>
+        <span>Self-Evolving Network Verifiers</span>
+      </button>
+      <div class="masthead-slot" id="masthead-slot"></div>
+    </div>
+  </header>
+
+  <div id="announce" class="sr" aria-live="polite" aria-atomic="true"></div>
+
+  <main id="app" tabindex="-1">
+    <noscript><p class="wrap">This page needs JavaScript to draw the networks. Everything runs locally; nothing is sent anywhere.</p></noscript>
+  </main>
+
+  <footer class="colophon">
+    <div class="wrap colophon-inner">
+      <p class="colophon-note">Every answer on this page was computed in advance by the real verifier code and the reference simulators; nothing is simulated in your browser.</p>
+      <nav class="colophon-links" aria-label="Paper and code">
+        <!-- TODO: replace with the arXiv URL once the paper is posted. -->
+        <a href="#">Paper (arXiv)</a>
+        <!-- TODO: replace with the public code repository URL. -->
+        <a href="#">Code</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="data/rr.js"></script>
+  <script src="data/ospf.js"></script>
+  <script src="content/rr.js"></script>
+  <script src="content/ospf.js"></script>
+  <script src="js/model.js"></script>
+  <script src="js/story.js"></script>
+  <script src="js/view.js"></script>
+  <script src="js/confetti.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
