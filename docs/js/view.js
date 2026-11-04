@@ -700,8 +700,7 @@
         h("p.affil", { text: "ETH Zürich" }),
         h("p.venue", { text: "HotNets 2026" }),
         h("div.hero-links", null,
-          // TODO: make this a link once the paper is posted.
-          h("span.pill.is-soon", { title: "The paper link will be added once it is posted" }, svgIcon("rules"), "Paper (coming soon)"),
+          h("a.pill", { href: "https://arxiv.org/abs/2608.11340" }, svgIcon("rules"), "Paper (arXiv)"),
           // A button, not a #fragment link: the hash names the page's place (see story.js).
           h("button.pill", { type: "button", "data-focus-key": "jump-try", on: { click: () => {
             const el = document.getElementById("p-try");
@@ -900,8 +899,7 @@
           h("span.rule-body", null,
             h("span.sr", { text: "Rule " + r.id + ": " }),
             richText("span.rule-text", r.text),
-            r.wrong ? h("span.rule-wrong", null, h("span", { "aria-hidden": "true", text: "✗ " }),
-              h("span.sr", { text: "Differs from reality. " }), h("strong", { text: (content.realName || content.oracleName) + ": " }), r.wrong) : null,
+            r.wrong ? h("span.rule-wrong", null, h("span", { "aria-hidden": "true", text: "✗ " }), noteText(r.wrong)) : null,
             badgeText || kind
               ? h("span.rule-tags", null,
                 badgeText ? h("span.rbadge.rbadge-" + badgeText, { text: badgeText }) : null,
@@ -909,9 +907,16 @@
                 kind === "decides" ? h("span.rbadge.rbadge-decides", null, h("span", { "aria-hidden": "true", text: "▸ " }), "decides here") : null)
               : null));
       })),
-      ver.missing ? h("p.rules-missing", null, h("span", { "aria-hidden": "true", text: "✗ " }), h("strong", { text: "Missing: " }), ver.missing) : null,
+      ver.missing ? h("p.rules-missing", null, h("span", { "aria-hidden": "true", text: "✗ " }), noteText(ver.missing)) : null,
       gap ? h("p.rules-gap", { text: gap }) : null,
       content.rulesNote ? h("p.rules-gap", { text: content.rulesNote }) : null);
+  }
+
+  // "The verifier does X, while it should actually do Y.": the correction in bold.
+  function noteText(note) {
+    const cut = note.indexOf(", while it should actually ");
+    if (cut < 0) return note;
+    return h("span", null, note.slice(0, cut) + ", ", h("strong", { text: note.slice(cut + 2) }));
   }
 
   function diffPre(text) {

@@ -132,7 +132,7 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.rr = {
      "id": 2,
      "text": "Every route counts as coming from a regular peer, even one sent by a client.",
      "change": "same",
-     "wrong": "a route from a client is remembered as coming from a client."
+     "wrong": "The verifier treats a route from a client like one from a regular peer, while it should actually remember it came from a client."
     },
     {
      "id": 3,
@@ -143,7 +143,7 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.rr = {
      "id": 4,
      "text": "Tie-break: cheaper path to the entry router, then lower neighbor number.",
      "change": "same",
-     "wrong": "after the path cost, the route reflected fewer times wins."
+     "wrong": "The verifier breaks ties without counting reflections, while it should actually prefer the route reflected fewer times, right after path cost."
     },
     {
      "id": 5,
@@ -157,7 +157,7 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.rr = {
     "excerpt": "-        transformed_route.from_type = SymbolicSessionType::from_val(ctx, &s.reverse_ty());\n+        // Record how the RECEIVER (`to`) learned this route: its own configured view\n+        // of the session with `from` (sessions[to][from]). This preserves the\n+        // IBgpClient relationship when `from` is `to`'s client, so a route learned\n+        // from a client is later reflected to all iBGP neighbors, not just clients\n+        // (RFC 4456). `s.reverse_ty()` collapsed every iBGP session to IBgpPeer,\n+        // which wrongly suppressed client→non-client-peer reflection.\n+        let recv_ty = self\n+            .sessions\n+            .get(&to)\n+            .and_then(|x| x.get(&from))\n…\n+        transformed_route.from_type = SymbolicSessionType::from_val(ctx, &recv_ty);",
     "explain": "The seed had a rule for route reflection, but it recorded every route learned over iBGP as coming from an ordinary peer. A reflector passes routes to non-client peers only if they came from a client or from eBGP, so a client's route never reached its non-client peers. The agent made the model remember the receiver's view of the session, and also added cluster-list length and an originator tie-break. The starting test corpus already caught this; no Test Generator needed."
    },
-   "missing": "Batfish also counts how many times a route was reflected."
+   "missing": "The verifier does not count how many times a route was reflected, while it should actually keep that count for every route."
   },
   {
    "name": "Midway",
@@ -182,7 +182,7 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.rr = {
      "id": 4,
      "text": "Tie-break: cheaper path, then lower entry-router number, then fewer reflections, then lower neighbor number.",
      "change": "changed",
-     "wrong": "fewer reflections is compared before the entry-router number."
+     "wrong": "The verifier compares entry-router numbers before reflections, while it should actually compare the number of reflections first."
     },
     {
      "id": 5,

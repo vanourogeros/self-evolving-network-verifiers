@@ -144,13 +144,13 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.ospf = {
      "id": 2,
      "text": "Each router takes the cheapest path, ignoring areas.",
      "change": "same",
-     "wrong": "areas matter; routers take the cheapest path inside an area."
+     "wrong": "The verifier ignores areas and takes the cheapest path anywhere, while it should actually find the cheapest path inside each area."
     },
     {
      "id": 3,
      "text": "Any router can pass traffic from one area to another.",
      "change": "same",
-     "wrong": "only routers linked to area 0 pass traffic between areas."
+     "wrong": "The verifier lets any router pass traffic between areas, while it should actually allow this only at routers linked to area 0."
     },
     {
      "id": 6,
@@ -164,7 +164,7 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.ospf = {
     "excerpt": "-/// constrained to the shortest path over the up-links.\n+/// constrained to the area-aware OSPF route over the up-links.\n…\n+/// - **intra-area** candidates `da[a](s, t)` (t reachable within area a); and\n+/// - **inter-area** candidates `da[a_s](s, b1) + da[0](b1, b2) + da[a_t](b2, t)`\n+///   over backbone routers `b1, b2` and areas `a_s, a_t` — i.e. source-area to an\n+///   ABR, across the backbone, then down the destination area. Because `b1`/`b2`\n+///   must be backbone routers, a non-ABR can never relay non-backbone→non-backbone\n+///   traffic (the forbidden shortcut).\n…\n+/// OSPF prefers **intra-area over inter-area regardless of cost**: inter-area\n+/// candidates only constrain the cost when no intra-area candidate is reachable.",
     "explain": "The seed computed plain shortest paths over every link, as if the whole network were a single area. The agent added areas: a route may change area only at a border router, through the backbone (area 0), and a path inside an area always beats a cheaper path that leaves it. The starting test corpus already caught this; no Test Generator needed."
    },
-   "missing": "Real OSPF also prefers a path that stays inside one area, even a costlier one."
+   "missing": "The verifier always takes the cheapest path, while it should actually prefer a path that stays inside one area, even a costlier one."
   },
   {
    "name": "Midway",
@@ -194,7 +194,7 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.ospf = {
      "id": 5,
      "text": "A destination with a working area-0 link must be reached through area 0.",
      "change": "new",
-     "wrong": "area 0 is used only if it can actually reach the destination."
+     "wrong": "The verifier trusts any working area-0 link, while it should actually use area 0 only if area 0 can reach the destination."
     },
     {
      "id": 6,
