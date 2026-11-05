@@ -31,24 +31,24 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.ospf = {
   },
   "octr_08_backbone_partitioned_dest": {
    "s": [
-    60,
-    170
+    135,
+    100
    ],
    "b1": [
-    180,
-    170
+    265,
+    100
    ],
    "b2": [
-    300,
-    170
+    265,
+    270
    ],
    "t": [
-    420,
-    170
+    465,
+    270
    ],
    "x": [
-    540,
-    170
+    465,
+    100
    ],
    "e0": [
     420,
@@ -57,20 +57,20 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.ospf = {
   },
   "octr_03_discontiguous_area": {
    "r0": [
-    80,
-    170
+    200,
+    100
    ],
    "r1": [
-    220,
-    170
+    200,
+    270
    ],
    "r2": [
-    360,
-    170
+    400,
+    270
    ],
    "r3": [
-    500,
-    170
+    400,
+    100
    ],
    "e0": [
     500,

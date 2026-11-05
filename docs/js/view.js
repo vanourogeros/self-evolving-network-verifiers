@@ -211,8 +211,9 @@
 
   // An OSPF network's areas as regions that tile the drawing without overlapping:
   // {pieces: [{area, rings: [[{x,y}]], label: {x,y}}]}, one piece per connected part of
-  // an area (a split area gets two). The drawing is the routers' outline, widened by
-  // AREA_PAD; each spot in it belongs to the area of its nearest link. Two areas' border
+  // an area (a split area gets two). The drawing is the union of each area's routers'
+  // outline, widened by AREA_PAD, with any hole filled; each spot in it belongs to the
+  // area of its nearest link. Two areas' border
   // is where their nearest links are equally far, so it runs through the router they
   // share. Traced on a grid (marching squares, interpolated so borders are smooth).
   const AREA_PAD = 40, AREA_STEP = 4;
@@ -237,7 +238,7 @@
     const links = card.net.links.filter((l) => pos[l.a] && pos[l.b]);
     const areas = [...new Set(links.map((l) => areaIndex(l.area)))].sort((a, b) => a - b);
     if (!internal.length || !links.length) return { pieces: [] };
-    const hull = convexHull(internal);
+    const hulls = areas.map((a) => convexHull([...new Set(links.filter((l) => areaIndex(l.area) === a).flatMap((l) => [l.a, l.b]))].map((n) => pos[n])));
     // Each link pulled back a little from a router it shares with another area: beyond
     // that router, both areas' links are otherwise nearest at the router itself, a tie;
     // pulled back, the border there splits the angle between the two links, still
@@ -253,15 +254,31 @@
     const x0 = Math.min(...internal.map((p) => p.x)) - m, y0 = Math.min(...internal.map((p) => p.y)) - m;
     const nx = Math.ceil((Math.max(...internal.map((p) => p.x)) + m - x0) / st), ny = Math.ceil((Math.max(...internal.map((p) => p.y)) + m - y0) / st);
     const at = (i, j) => ({ x: x0 + i * st, y: y0 + j * st });
-    // inside[a][j][i] < 0 inside area a: the larger of "outside the outline" and
-    // "nearer another area's link".
+    // outside[j][i] >= 0 outside the drawing; a hole (outside, but not reachable from
+    // the grid's edge) is filled in.
+    const outside = [];
+    for (let j = 0; j <= ny; j++) {
+      const row = [];
+      for (let i = 0; i <= nx; i++) row.push(Math.min(...hulls.map((hl) => hullDist(hl, at(i, j)))) - AREA_PAD);
+      outside.push(row);
+    }
+    const open = outside.map((row) => row.map(() => false)), stack = [];
+    for (let j = 0; j <= ny; j++) for (let i = 0; i <= nx; i++)
+      if ((i === 0 || j === 0 || i === nx || j === ny) && outside[j][i] >= 0) { open[j][i] = true; stack.push([i, j]); }
+    while (stack.length) {
+      const [a, b] = stack.pop();
+      for (const [c, e] of [[a + 1, b], [a - 1, b], [a, b + 1], [a, b - 1]])
+        if (c >= 0 && e >= 0 && c <= nx && e <= ny && !open[e][c] && outside[e][c] >= 0) { open[e][c] = true; stack.push([c, e]); }
+    }
+    // field[k][j][i] < 0 inside area k: the larger of "outside the drawing" and "nearer
+    // another area's link".
     const field = areas.map(() => []);
     const near = [];
     for (let j = 0; j <= ny; j++) {
       const rows = areas.map(() => []), nrow = [];
       for (let i = 0; i <= nx; i++) {
         const P = at(i, j);
-        const out = hullDist(hull, P) - AREA_PAD;
+        const out = outside[j][i] >= 0 && !open[j][i] ? -1 : outside[j][i];
         const d = areas.map((a) => Math.min(...segs.filter((g) => g.area === a).map((g) => segDist(g.A, g.B, P))));
         areas.forEach((a, k) => {
           const other = Math.min(...d.filter((_, q) => q !== k));
