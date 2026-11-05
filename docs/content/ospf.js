@@ -194,7 +194,7 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.ospf = {
      "id": 5,
      "text": "A destination with a working area-0 link must be reached through area 0.",
      "change": "new",
-     "wrong": "The verifier trusts any working area-0 link, while it should actually use area 0 only if area 0 can reach the destination."
+     "wrong": "The verifier trusts any working area-0 link, while it should actually trust it only if it is in the same piece of area 0."
     },
     {
      "id": 6,
@@ -690,7 +690,7 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.ospf = {
   },
   "octr_08_backbone_partitioned_dest": {
    "0": "Oh, so areas do matter: area 1 can’t join the two pieces of area 0!",
-   "1": "Oh, so area 0 only helps if it can actually reach the destination!"
+   "1": "Oh, so t’s area-0 link is in the other piece of area 0. I must enter t from area 1!"
   },
   "octr_04_intra_beats_cheaper_backbone": {
    "0": "Oh, so a path that stays inside one area wins, even if it costs more!"
