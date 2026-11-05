@@ -209,50 +209,171 @@
     return ss.type === "EBgp" ? "ebgp" : "session";
   }
 
-  // An OSPF network's areas as regions: [{area, links:[[a,b]], hull:[{x,y}] | null,
-  // label:{x,y}}], one per connected piece of each area (a split area gets two). A piece
-  // is drawn as its routers' outline (hull) when no other router comes near it, and
-  // otherwise as a band along its links. The label sits beside the
-  // piece's longest link, on the side away from the middle of the network (above when
-  // level with it), clear of the region drawn PAD around the links.
-  const AREA_PAD = 34;
-  function areaPieces(card, pos) {
-    const internal = card.net.routers.filter((r) => !r.external && pos[r.name]);
-    const cx = internal.reduce((t, r) => t + pos[r.name].x, 0) / (internal.length || 1);
-    const cy = internal.reduce((t, r) => t + pos[r.name].y, 0) / (internal.length || 1);
-    const byArea = new Map();
-    for (const l of card.net.links) {
-      if (!pos[l.a] || !pos[l.b]) continue;
-      const a = areaIndex(l.area);
-      if (!byArea.has(a)) byArea.set(a, []);
-      byArea.get(a).push(l);
-    }
-    const out = [];
-    for (const [area, links] of [...byArea].sort((x, y) => x[0] - y[0])) {
-      const root = {};
-      const find = (n) => (root[n] === undefined || root[n] === n ? n : (root[n] = find(root[n])));
-      for (const l of links) root[find(l.a)] = find(l.b);
-      const groups = new Map();
-      for (const l of links) {
-        const k = find(l.a);
-        if (!groups.has(k)) groups.set(k, []);
-        groups.get(k).push(l);
+  // An OSPF network's areas as regions that tile the drawing without overlapping:
+  // {pieces: [{area, rings: [[{x,y}]], label: {x,y}}]}, one piece per connected part of
+  // an area (a split area gets two). The drawing is the routers' outline, widened by
+  // AREA_PAD; each spot in it belongs to the area of its nearest link. Two areas' border
+  // is where their nearest links are equally far, so it runs through the router they
+  // share. Traced on a grid (marching squares, interpolated so borders are smooth).
+  const AREA_PAD = 40, AREA_STEP = 4;
+  const areaCache = new WeakMap();
+  function areaRegions(card, pos) {
+    const key = JSON.stringify(pos);
+    const hit = areaCache.get(card);
+    if (hit && hit.key === key) return hit.value;
+    const value = traceAreas(card, pos);
+    areaCache.set(card, { key, value });
+    return value;
+  }
+
+  function segDist(A, B, P) {
+    const dx = B.x - A.x, dy = B.y - A.y, L = dx * dx + dy * dy;
+    const t = L ? Math.max(0, Math.min(1, ((P.x - A.x) * dx + (P.y - A.y) * dy) / L)) : 0;
+    return Math.hypot(P.x - A.x - t * dx, P.y - A.y - t * dy);
+  }
+
+  function traceAreas(card, pos) {
+    const internal = card.net.routers.filter((r) => !r.external && pos[r.name]).map((r) => pos[r.name]);
+    const links = card.net.links.filter((l) => pos[l.a] && pos[l.b]);
+    const areas = [...new Set(links.map((l) => areaIndex(l.area)))].sort((a, b) => a - b);
+    if (!internal.length || !links.length) return { pieces: [] };
+    const hull = convexHull(internal);
+    // Each link pulled back a little from a router it shares with another area: beyond
+    // that router, both areas' links are otherwise nearest at the router itself, a tie;
+    // pulled back, the border there splits the angle between the two links, still
+    // through the router.
+    const areasAt = {};
+    for (const l of links) for (const n of [l.a, l.b]) (areasAt[n] = areasAt[n] || new Set()).add(areaIndex(l.area));
+    const segs = links.map((l) => {
+      const A = pos[l.a], B = pos[l.b], len = Math.hypot(B.x - A.x, B.y - A.y) || 1;
+      const e = Math.min(12, len / 4) / len, ea = areasAt[l.a].size > 1 ? e : 0, eb = areasAt[l.b].size > 1 ? e : 0;
+      return { area: areaIndex(l.area), A: { x: A.x + (B.x - A.x) * ea, y: A.y + (B.y - A.y) * ea }, B: { x: B.x - (B.x - A.x) * eb, y: B.y - (B.y - A.y) * eb } };
+    });
+    const st = AREA_STEP, m = AREA_PAD + 2 * st;
+    const x0 = Math.min(...internal.map((p) => p.x)) - m, y0 = Math.min(...internal.map((p) => p.y)) - m;
+    const nx = Math.ceil((Math.max(...internal.map((p) => p.x)) + m - x0) / st), ny = Math.ceil((Math.max(...internal.map((p) => p.y)) + m - y0) / st);
+    const at = (i, j) => ({ x: x0 + i * st, y: y0 + j * st });
+    // inside[a][j][i] < 0 inside area a: the larger of "outside the outline" and
+    // "nearer another area's link".
+    const field = areas.map(() => []);
+    const near = [];
+    for (let j = 0; j <= ny; j++) {
+      const rows = areas.map(() => []), nrow = [];
+      for (let i = 0; i <= nx; i++) {
+        const P = at(i, j);
+        const out = hullDist(hull, P) - AREA_PAD;
+        const d = areas.map((a) => Math.min(...segs.filter((g) => g.area === a).map((g) => segDist(g.A, g.B, P))));
+        areas.forEach((a, k) => {
+          const other = Math.min(...d.filter((_, q) => q !== k));
+          rows[k].push(Math.max(out, d[k] - (other === Infinity ? Infinity : other)));
+        });
+        nrow.push(Math.min(...d));
       }
-      for (const ls of groups.values()) {
-        const members = new Set(ls.flatMap((x) => [x.a, x.b]));
-        let hull = convexHull([...members].map((n) => pos[n]));
-        if (internal.some((r) => !members.has(r.name) && hullDist(hull, pos[r.name]) < AREA_PAD + 19)) hull = null;
-        const len = (l) => Math.hypot(pos[l.b].x - pos[l.a].x, pos[l.b].y - pos[l.a].y);
-        const l = ls.reduce((m, x) => (len(x) > len(m) ? x : m));
-        const A = pos[l.a], B = pos[l.b], d = len(l) || 1;
-        const mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2;
-        let nx = -(B.y - A.y) / d, ny = (B.x - A.x) / d;
-        const away = nx * (mx - cx) + ny * (my - cy);
-        if (away < -1e-6 || (Math.abs(away) <= 1e-6 && ny > 0)) { nx = -nx; ny = -ny; }
-        out.push({ area, links: ls.map((x) => [x.a, x.b]), hull, label: { x: mx + nx * (AREA_PAD + 12), y: my + ny * (AREA_PAD + 12) + 4 } });
-      }
+      areas.forEach((_, k) => field[k].push(rows[k]));
+      near.push(nrow);
     }
-    return out;
+    const pieces = [];
+    areas.forEach((area, k) => {
+      const f = field[k];
+      // Connected parts, by flood fill over grid points inside the area.
+      const part = f.map((row) => row.map(() => -1));
+      let nParts = 0;
+      for (let j = 0; j <= ny; j++) for (let i = 0; i <= nx; i++) {
+        if (f[j][i] >= 0 || part[j][i] >= 0) continue;
+        const stack = [[i, j]];
+        part[j][i] = nParts;
+        while (stack.length) {
+          const [a, b] = stack.pop();
+          for (const [c, e] of [[a + 1, b], [a - 1, b], [a, b + 1], [a, b - 1]])
+            if (c >= 0 && e >= 0 && c <= nx && e <= ny && f[e][c] < 0 && part[e][c] < 0) { part[e][c] = nParts; stack.push([c, e]); }
+        }
+        nParts++;
+      }
+      const rings = contour(f, nx, ny, at);
+      for (let q = 0; q < nParts; q++) {
+        // The label goes where it is clearest of the area's border, the links and the
+        // routers, checked across its width (as wide as on a phone); among spots clear
+        // enough, the one nearest the part's middle, the upper one on a tie.
+        const half = Math.ceil(34 / st);
+        let mx = 0, my = 0, cnt = 0;
+        for (let j = 0; j <= ny; j++) for (let i = 0; i <= nx; i++) if (part[j][i] === q) { const P = at(i, j); mx += P.x; my += P.y; cnt++; }
+        mx /= cnt; my /= cnt;
+        let best = null, bestScore = -Infinity, bestD = Infinity;
+        for (let j = 0; j <= ny; j++) for (let i = half; i <= nx - half; i++) {
+          if (part[j][i] !== q) continue;
+          let score = 24;
+          for (const di of [-half, 0, half]) {
+            const v = f[j][i + di], P = at(i + di, j);
+            const rd = Math.min(...internal.map((R) => Math.hypot(R.x - P.x, R.y - P.y))) - 32;
+            score = Math.min(score, part[j][i + di] === q ? -v : -Infinity, near[j][i + di] - 4, rd);
+          }
+          const P = at(i, j), dm = Math.hypot(P.x - mx, P.y - my);
+          if (score > bestScore + 1e-9 || (Math.abs(score - bestScore) <= 1e-9 && dm < bestD - 1e-9)) { bestScore = score; bestD = dm; best = P; }
+        }
+        const ringsOf = rings.filter((r) => {
+          // A ring belongs to this part when its first grid neighbour inside is in it.
+          const P = r[0];
+          let cell = null, dmin = Infinity;
+          for (let dj = -1; dj <= 2; dj++) for (let di = -1; di <= 2; di++) {
+            const i = Math.floor((P.x - x0) / st) + di, j = Math.floor((P.y - y0) / st) + dj;
+            if (i < 0 || j < 0 || i > nx || j > ny || part[j][i] < 0) continue;
+            const g = at(i, j), dd = Math.hypot(g.x - P.x, g.y - P.y);
+            if (dd < dmin) { dmin = dd; cell = part[j][i]; }
+          }
+          return cell === q;
+        });
+        pieces.push({ area, rings: ringsOf, label: best ? { x: best.x, y: best.y + 4.5 } : null });
+      }
+    });
+    return { pieces };
+  }
+
+  // Closed outlines of the region where f < 0 (marching squares; the grid's edge is
+  // outside). Saddles are split by the cell centre's average value.
+  function contour(f, nx, ny, at) {
+    const pt = (i1, j1, i2, j2) => {
+      const a = f[j1][i1], b = f[j2][i2], t = a / (a - b), P = at(i1, j1), Q = at(i2, j2);
+      return { x: P.x + (Q.x - P.x) * t, y: P.y + (Q.y - P.y) * t };
+    };
+    const segs = [];
+    const ends = new Map();
+    const add = (k1, p1, k2, p2) => {
+      const sgi = segs.length;
+      segs.push([k1, p1, k2, p2]);
+      for (const k of [k1, k2]) { if (!ends.has(k)) ends.set(k, []); ends.get(k).push(sgi); }
+    };
+    for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+      const tl = f[j][i] < 0, tr = f[j][i + 1] < 0, br = f[j + 1][i + 1] < 0, bl = f[j + 1][i] < 0;
+      const c = (tl ? 8 : 0) + (tr ? 4 : 0) + (br ? 2 : 0) + (bl ? 1 : 0);
+      if (c === 0 || c === 15) continue;
+      const E = {
+        t: ["h" + i + "," + j, () => pt(i, j, i + 1, j)], b: ["h" + i + "," + (j + 1), () => pt(i, j + 1, i + 1, j + 1)],
+        l: ["v" + i + "," + j, () => pt(i, j, i, j + 1)], r: ["v" + (i + 1) + "," + j, () => pt(i + 1, j, i + 1, j + 1)],
+      };
+      const centre = (f[j][i] + f[j][i + 1] + f[j + 1][i + 1] + f[j + 1][i]) / 4 < 0;
+      const pairs = {
+        1: ["lb"], 2: ["br"], 3: ["lr"], 4: ["tr"], 5: centre ? ["lt", "br"] : ["lb", "tr"], 6: ["tb"], 7: ["lt"],
+        8: ["lt"], 9: ["tb"], 10: centre ? ["tr", "lb"] : ["lt", "br"], 11: ["tr"], 12: ["lr"], 13: ["br"], 14: ["lb"],
+      }[c];
+      for (const [u, v] of pairs) add(E[u][0], E[u][1](), E[v][0], E[v][1]());
+    }
+    const used = new Array(segs.length).fill(false), rings = [];
+    for (let s0 = 0; s0 < segs.length; s0++) {
+      if (used[s0]) continue;
+      used[s0] = true;
+      const ring = [segs[s0][1]];
+      let key = segs[s0][2], start = segs[s0][0], pnt = segs[s0][3];
+      while (key !== start) {
+        ring.push(pnt);
+        const nxt = (ends.get(key) || []).find((q) => !used[q]);
+        if (nxt === undefined) break;
+        used[nxt] = true;
+        const sg = segs[nxt];
+        if (sg[0] === key) { key = sg[2]; pnt = sg[3]; } else { key = sg[0]; pnt = sg[1]; }
+      }
+      if (ring.length > 2) rings.push(ring);
+    }
+    return rings;
   }
 
   // The convex hull of points, counter-clockwise (Andrew's monotone chain).
@@ -471,17 +592,14 @@
       if (!o.routes.both) draw(o.routes.model, "route.route-model");
     }
 
-    // Each area is a tinted region: its outline (or its links) drawn with a wide round
-    // stroke, in one group whose opacity is applied once, so overlaps within an area
-    // don't darken.
+    // Each area is a tinted region with a hard border; a router two areas share sits on
+    // the border between them.
     if (level === "ospf")
-      for (const piece of areaPieces(card, pos)) {
+      for (const piece of areaRegions(card, pos).pieces) {
         const k = Math.min(piece.area, 3);
-        const shapes = piece.hull
-          ? [s("polygon", { points: piece.hull.map((q) => q.x + "," + q.y).join(" "), "stroke-width": 2 * AREA_PAD, "stroke-linejoin": "round" })]
-          : piece.links.map(([a, b]) => s("line", { x1: pos[a].x, y1: pos[a].y, x2: pos[b].x, y2: pos[b].y, "stroke-width": 2 * AREA_PAD }));
-        gAreas.appendChild(s("g.area-region.area-" + k, null, shapes));
-        if (!mini && !answer)
+        const d = piece.rings.map((r) => "M" + r.map((q) => q.x.toFixed(1) + " " + q.y.toFixed(1)).join(" L") + " Z").join(" ");
+        gAreas.appendChild(s("path.area-region.area-" + k, { d, "fill-rule": "evenodd" }));
+        if (!mini && !answer && piece.label)
           gAreas.appendChild(s("text.area-label.area-" + k, { x: +piece.label.x.toFixed(1), y: +piece.label.y.toFixed(1), "text-anchor": "middle", text: "area " + piece.area }));
       }
 
@@ -1210,6 +1328,6 @@
 
   HSA.view = { h, drawNet, landing, story, explore, compareRows,
     routeChain, routeEdges, deciderFor, mistakeFor, routerIds, ridLabel,
-    hopShape, chipSpots, idSpots, areaPieces, positions, VIEW, ruleGapText, ruleChanges, TITLE,
+    hopShape, chipSpots, idSpots, areaRegions, positions, VIEW, ruleGapText, ruleChanges, TITLE,
     cardText, optionText, answerText, quizText, revealFacts };
 })(globalThis);
