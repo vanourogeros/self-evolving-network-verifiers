@@ -209,9 +209,90 @@
     return ss.type === "EBgp" ? "ebgp" : "session";
   }
 
-  // Link label chips: [{x, y, w, h, label, cls, cost}]. A link under a drawn route gets
-  // its chip moved 18 px off the link, to the upper (or, for a vertical link, left)
-  // side, so the route band stays visible.
+  // An OSPF network's areas as regions: [{area, links:[[a,b]], hull:[{x,y}] | null,
+  // label:{x,y}}], one per connected piece of each area (a split area gets two). A piece
+  // is drawn as its routers' outline (hull) when no other router comes near it, and
+  // otherwise as a band along its links. The label sits beside the
+  // piece's longest link, on the side away from the middle of the network (above when
+  // level with it), clear of the region drawn PAD around the links.
+  const AREA_PAD = 34;
+  function areaPieces(card, pos) {
+    const internal = card.net.routers.filter((r) => !r.external && pos[r.name]);
+    const cx = internal.reduce((t, r) => t + pos[r.name].x, 0) / (internal.length || 1);
+    const cy = internal.reduce((t, r) => t + pos[r.name].y, 0) / (internal.length || 1);
+    const byArea = new Map();
+    for (const l of card.net.links) {
+      if (!pos[l.a] || !pos[l.b]) continue;
+      const a = areaIndex(l.area);
+      if (!byArea.has(a)) byArea.set(a, []);
+      byArea.get(a).push(l);
+    }
+    const out = [];
+    for (const [area, links] of [...byArea].sort((x, y) => x[0] - y[0])) {
+      const root = {};
+      const find = (n) => (root[n] === undefined || root[n] === n ? n : (root[n] = find(root[n])));
+      for (const l of links) root[find(l.a)] = find(l.b);
+      const groups = new Map();
+      for (const l of links) {
+        const k = find(l.a);
+        if (!groups.has(k)) groups.set(k, []);
+        groups.get(k).push(l);
+      }
+      for (const ls of groups.values()) {
+        const members = new Set(ls.flatMap((x) => [x.a, x.b]));
+        let hull = convexHull([...members].map((n) => pos[n]));
+        if (internal.some((r) => !members.has(r.name) && hullDist(hull, pos[r.name]) < AREA_PAD + 19)) hull = null;
+        const len = (l) => Math.hypot(pos[l.b].x - pos[l.a].x, pos[l.b].y - pos[l.a].y);
+        const l = ls.reduce((m, x) => (len(x) > len(m) ? x : m));
+        const A = pos[l.a], B = pos[l.b], d = len(l) || 1;
+        const mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2;
+        let nx = -(B.y - A.y) / d, ny = (B.x - A.x) / d;
+        const away = nx * (mx - cx) + ny * (my - cy);
+        if (away < -1e-6 || (Math.abs(away) <= 1e-6 && ny > 0)) { nx = -nx; ny = -ny; }
+        out.push({ area, links: ls.map((x) => [x.a, x.b]), hull, label: { x: mx + nx * (AREA_PAD + 12), y: my + ny * (AREA_PAD + 12) + 4 } });
+      }
+    }
+    return out;
+  }
+
+  // The convex hull of points, counter-clockwise (Andrew's monotone chain).
+  function convexHull(points) {
+    const p = [...points].sort((a, b) => a.x - b.x || a.y - b.y);
+    if (p.length < 3) return p;
+    const cross = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+    const half = (pts) => {
+      const out = [];
+      for (const q of pts) {
+        while (out.length >= 2 && cross(out[out.length - 2], out[out.length - 1], q) <= 0) out.pop();
+        out.push(q);
+      }
+      return out.slice(0, -1);
+    };
+    return half(p).concat(half(p.slice().reverse()));
+  }
+
+  // Distance from P to a convex polygon (0 inside it).
+  function hullDist(hull, P) {
+    const seg = (A, B) => {
+      const dx = B.x - A.x, dy = B.y - A.y, L = dx * dx + dy * dy;
+      const t = L ? Math.max(0, Math.min(1, ((P.x - A.x) * dx + (P.y - A.y) * dy) / L)) : 0;
+      return Math.hypot(P.x - A.x - t * dx, P.y - A.y - t * dy);
+    };
+    if (hull.length === 1) return Math.hypot(P.x - hull[0].x, P.y - hull[0].y);
+    const n = hull.length;
+    let inside = n >= 3, d = Infinity;
+    for (let i = 0; i < n; i++) {
+      const A = hull[i], B = hull[(i + 1) % n];
+      if ((B.x - A.x) * (P.y - A.y) - (B.y - A.y) * (P.x - A.x) < 0) inside = false;
+      d = Math.min(d, seg(A, B));
+    }
+    return inside ? 0 : d;
+  }
+
+  // Link label chips: [{x, y, w, h, label, cls}]: the cost, and ✕ on a broken
+  // link; OSPF links that cost 1 get none. A link under a drawn route gets its chip
+  // moved 18 px off the link, to the upper (or, for a vertical link, left) side, so the
+  // route band stays visible.
   function chipSpots(card, pos, level, onRoute, failed) {
     const out = [];
     const cw = (label) => label.length * 7.4 + 12;
@@ -219,7 +300,7 @@
       const A = pos[l.a], B = pos[l.b];
       if (!A || !B) continue;
       const isFailed = failed.has(edgeKey(l.a, l.b));
-      const area = areaIndex(l.area);
+      if (level === "ospf" && l.w === 1 && !isFailed) continue;
       let x = (A.x + B.x) / 2, y = (A.y + B.y) / 2;
       if (onRoute.has(edgeKey(l.a, l.b))) {
         const len = Math.hypot(B.x - A.x, B.y - A.y) || 1;
@@ -227,16 +308,8 @@
         if (ny > 0 || (ny === 0 && nx > 0)) { nx = -nx; ny = -ny; }
         x += nx * 18; y += ny * 18;
       }
-      let label = level === "ospf" ? "area " + area + (l.w !== 1 ? " · " + fmtW(l.w) : "") : fmtW(l.w);
-      if (isFailed) label = "✕ " + label;
-      const kind = level === "ospf" ? "chip-area" : "chip-weight";
-      out.push({ x, y, w: cw(label), h: 20, label, cost: false,
-        cls: kind + (isFailed ? ".chip-failed" : level === "ospf" ? ".chip-area-" + Math.min(area, 3) : "") });
-      // Narrow screens hide the area text (colour and legend carry it) but keep a non-unit cost.
-      if (level === "ospf" && l.w !== 1) {
-        const c = (isFailed ? "✕ " : "") + fmtW(l.w);
-        out.push({ x, y, w: cw(c), h: 20, label: c, cost: true, cls: "chip-cost" + (isFailed ? ".chip-failed" : ".chip-area-" + Math.min(area, 3)) });
-      }
+      const label = level === "ospf" && l.w === 1 ? "✕" : (isFailed ? "✕ " : "") + fmtW(l.w);
+      out.push({ x, y, w: cw(label), h: 20, label, cls: "chip-weight" + (isFailed ? ".chip-failed" : "") });
     }
     return out;
   }
@@ -346,9 +419,9 @@
             s("path.route-head-" + side, { d: "M0 0 L10 5 L0 10 z" })))));
     }
 
-    const gLinks = s("g.links"), gExt = s("g.ebgp"), gSess = s("g.sessions"), gRoutes = s("g.routes"),
+    const gAreas = s("g.areas"), gLinks = s("g.links"), gExt = s("g.ebgp"), gSess = s("g.sessions"), gRoutes = s("g.routes"),
       gLabels = s("g.labels"), gRings = s("g.rings"), gNodes = s("g.nodes");
-    svg.append(gLinks, gExt, gSess, gRoutes, gLabels, gRings, gNodes);
+    svg.append(gAreas, gLinks, gExt, gSess, gRoutes, gLabels, gRings, gNodes);
 
     // Control point of the curve an iBGP session (or a route along it) bends through.
     const bend = (A, B) => {
@@ -397,6 +470,20 @@
       draw(o.routes.oracle, "route.route-oracle");
       if (!o.routes.both) draw(o.routes.model, "route.route-model");
     }
+
+    // Each area is a tinted region: its outline (or its links) drawn with a wide round
+    // stroke, in one group whose opacity is applied once, so overlaps within an area
+    // don't darken.
+    if (level === "ospf")
+      for (const piece of areaPieces(card, pos)) {
+        const k = Math.min(piece.area, 3);
+        const shapes = piece.hull
+          ? [s("polygon", { points: piece.hull.map((q) => q.x + "," + q.y).join(" "), "stroke-width": 2 * AREA_PAD, "stroke-linejoin": "round" })]
+          : piece.links.map(([a, b]) => s("line", { x1: pos[a].x, y1: pos[a].y, x2: pos[b].x, y2: pos[b].y, "stroke-width": 2 * AREA_PAD }));
+        gAreas.appendChild(s("g.area-region.area-" + k, null, shapes));
+        if (!mini && !answer)
+          gAreas.appendChild(s("text.area-label.area-" + k, { x: +piece.label.x.toFixed(1), y: +piece.label.y.toFixed(1), "text-anchor": "middle", text: "area " + piece.area }));
+      }
 
     const onRoute = new Set();
     if (!mini && o.routes)
@@ -478,7 +565,12 @@
     if (x.ids) items.push([null, "#n = router number (some ties go to the lower number)"]);
     if (level === "ospf") {
       const areas = [...new Set(card.net.links.map((l) => areaIndex(l.area)))].sort((a, b) => a - b);
-      for (const a of areas) items.push([sw("link area area-" + Math.min(a, 3) + (a === 0 ? " backbone" : "")), a === 0 ? "area 0" : "area " + a]);
+      for (const a of areas) {
+        const k = Math.min(a, 3);
+        items.push([s("svg.swatch", { viewBox: "0 0 36 16", width: 36, height: 16, "aria-hidden": "true" },
+          s("rect.area-region.area-" + k, { x: 0, y: 0, width: 36, height: 16, rx: 8 }),
+          s("line", { class: "link area area-" + k + (a === 0 ? " backbone" : ""), x1: 8, y1: 8, x2: 28, y2: 8 })), a === 0 ? "area 0" : "area " + a]);
+      }
       items.push([null, card.net.links.some((l) => l.w !== 1) ? "every link costs 1, unless a number is shown" : "every link costs 1"]);
     } else {
       items.push([sw("link"), "cable, with its cost"]);
@@ -1118,6 +1210,6 @@
 
   HSA.view = { h, drawNet, landing, story, explore, compareRows,
     routeChain, routeEdges, deciderFor, mistakeFor, routerIds, ridLabel,
-    hopShape, chipSpots, idSpots, positions, VIEW, ruleGapText, ruleChanges, TITLE,
+    hopShape, chipSpots, idSpots, areaPieces, positions, VIEW, ruleGapText, ruleChanges, TITLE,
     cardText, optionText, answerText, quizText, revealFacts };
 })(globalThis);

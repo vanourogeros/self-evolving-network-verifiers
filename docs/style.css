@@ -424,10 +424,19 @@ button { font: inherit; color: inherit; }
 
 .net .chip rect { fill: var(--panel); stroke: var(--rule); stroke-width: 1; }
 .net .chip text { font-family: var(--mono); font-size: 12px; font-weight: 700; fill: var(--muted); }
-.net .chip-area-0 text { fill: var(--accent); }
-.net .chip-area-1 text { fill: var(--area-1); }
-.net .chip-area-2 text { fill: var(--area-2); }
-.net .chip-area-3 text { fill: var(--area-3); }
+/* OSPF areas: a soft tinted region around each area's links, named at its edge */
+.net .area-region { opacity: 0.13; stroke-linecap: round; }
+:root[data-theme="light"] .net .area-region { opacity: 0.1; }
+.area-region.area-0 { stroke: var(--accent); fill: var(--accent); }
+.area-region.area-1 { stroke: var(--area-1); fill: var(--area-1); }
+.area-region.area-2 { stroke: var(--area-2); fill: var(--area-2); }
+.area-region.area-3 { stroke: var(--area-3); fill: var(--area-3); }
+.swatch .area-region { opacity: 0.22; stroke: none; }
+.net .area-label { font-family: var(--sans); font-size: 13px; font-weight: 700; }
+.net .area-label.area-0 { fill: var(--accent); }
+.net .area-label.area-1 { fill: var(--area-1); }
+.net .area-label.area-2 { fill: var(--area-2); }
+.net .area-label.area-3 { fill: var(--area-3); }
 .net .chip-failed rect { stroke-dasharray: 3 2; stroke: var(--muted); }
 .net .chip-failed text { fill: var(--muted); }
 
@@ -729,6 +738,7 @@ body.kiosk .wrap { max-width: 1500px; }
   .strip { grid-auto-columns: minmax(150px, 46%); }
   /* keep router names and link labels legible when the 600-unit drawing shrinks */
   .netfig .node > * { scale: 1.3; }
+  .netfig .net .area-label { font-size: 17px; }
   .netfig .ringg > * { scale: 1.3; }
   .netfig .chip > * { scale: 1.15; }
   .netfig .net .link { stroke-width: 5; }
@@ -737,12 +747,6 @@ body.kiosk .wrap { max-width: 1500px; }
   .netfig .net .noroute-tag { scale: 1.2; }
 }
 
-.net .chip-cost { display: none; }
-@media (max-width: 520px) {
-  /* area colour and the legend carry the area; keep only non-unit OSPF costs */
-  .netfig .net .chip-area { display: none; }
-  .netfig .net .chip-cost { display: inline; }
-}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }

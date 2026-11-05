@@ -660,7 +660,7 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.ospf = {
   ],
   [
    "Areas",
-   "links are coloured by area. Traffic that moves between areas must pass through area 0, the central one (blue)."
+   "each area is a shaded region, and its links share its colour; a router where two regions overlap is in both. Traffic that moves between areas must pass through area 0, the central one (blue)."
   ],
   [
    "Reference",
