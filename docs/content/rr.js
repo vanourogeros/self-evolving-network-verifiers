@@ -242,7 +242,7 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.rr = {
  ],
  "twist": "Comparing reflections before the entry router is Batfish's choice. Real routers running FRR (common open-source router software, version 8.4) compare the entry router first by default, as the Midway version did. So the final verifier is only as faithful as its reference, and no more.",
  "bonus": null,
- "endText": "The Final version agrees with Batfish on every network here and on all 600 tests of the run. But passing every test is not a proof that it is right. When can we trust it? Come and argue with us at the poster.",
+ "endText": "The Final version agrees with Batfish on every network here and on all 600 tests of the run. But passing every test is not a proof that it is right. When can we trust it?",
  "deciders": {
   "case_12": {
    "no failures": [

@@ -249,7 +249,7 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.ospf = {
  ],
  "twist": null,
  "bonus": "Two AI agents each built OSPF rules that pass every test. But on an 18-router network, one (the one shown here) could not finish a check in 20 minutes, while the other took 0.16 s. Asked to make its rules scale, the slow one fixed this in two rounds (0.4 s).",
- "endText": "The Final version agrees with bgpsim on every network here and on all 544 tests of the run. But passing every test is not a proof that it is right. When can we trust it? Come and argue with us at the poster.",
+ "endText": "The Final version agrees with bgpsim on every network here and on all 544 tests of the run. But passing every test is not a proof that it is right. When can we trust it?",
  "deciders": {
   "area_forced_backbone": {
    "no failures": [
