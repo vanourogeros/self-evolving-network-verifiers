@@ -1042,6 +1042,54 @@
 
   // ---------- panels ----------
 
+  // What the verifier says on a network in version v: the network's own line when the
+  // content has one, otherwise the version's.
+  function verifierSays(content, card, v) {
+    const vs = content && content.verifierSays;
+    if (!vs) return null;
+    const own = vs[card.id] && vs[card.id][String(v)];
+    return own || (vs.default && vs.default[v]) || null;
+  }
+
+  // The verifier as a small cartoon robot with a magnifying glass. Its face follows the
+  // version: sure of itself at the start, sure but wrong in a subtler way midway, and
+  // wondering at the end.
+  function mascot(v) {
+    const face = [
+      [s("path.m-line", { d: "M25 26 Q30 22 35 25" }), s("path.m-line", { d: "M45 25 Q50 22 55 26" }),
+        s("path.m-mouth", { d: "M28 42 Q40 53 52 42 Z" })],
+      [s("path.m-line", { d: "M25 25 L35 24" }), s("path.m-line", { d: "M45 22 Q50 20 55 23" }),
+        s("path.m-line", { d: "M31 44 Q40 49 49 43" })],
+      [s("path.m-line", { d: "M25 25 Q30 22 35 24" }), s("path.m-line", { d: "M45 24 Q50 22 55 25" }),
+        s("path.m-line", { d: "M35 46 Q40 44 45 46" }), s("text.m-q", { x: 66, y: 16, text: "?" })],
+    ][Math.max(0, Math.min(2, v))];
+    const look = v === 2 ? -2.5 : 0;
+    return s("svg.mascot", { viewBox: "0 0 84 100", width: 84, height: 100, "aria-hidden": "true", focusable: "false" },
+      s("line.m-line", { x1: 40, y1: 14, x2: 40, y2: 5 }),
+      s("circle.m-accent", { cx: 40, cy: 5, r: 3.5 }),
+      s("rect.m-body", { x: 14, y: 14, width: 52, height: 40, rx: 13 }),
+      s("circle.m-eye", { cx: 31, cy: 33 + look, r: 4.5 }), s("circle.m-eye", { cx: 49, cy: 33 + look, r: 4.5 }),
+      s("circle.m-glint", { cx: 32.5, cy: 31.5 + look, r: 1.4 }), s("circle.m-glint", { cx: 50.5, cy: 31.5 + look, r: 1.4 }),
+      face,
+      s("rect.m-body", { x: 24, y: 58, width: 32, height: 26, rx: 8 }),
+      s("circle.m-accent", { cx: 40, cy: 70, r: 6 }),
+      s("path.m-check", { d: "M37 70 L39.5 72.5 L43.5 67.5" }),
+      s("line.m-line", { x1: 24, y1: 66, x2: 15, y2: 76 }),
+      s("line.m-line", { x1: 56, y1: 66, x2: 64, y2: 60 }),
+      s("circle.m-lens", { cx: 70, cy: 53, r: 8 }),
+      s("line.m-line", { x1: 64, y1: 60, x2: 66, y2: 58 }),
+      s("line.m-line", { x1: 33, y1: 84, x2: 33, y2: 94 }), s("line.m-line", { x1: 47, y1: 84, x2: 47, y2: 94 }),
+      s("line.m-line", { x1: 29, y1: 95, x2: 35, y2: 95 }), s("line.m-line", { x1: 45, y1: 95, x2: 51, y2: 95 }));
+  }
+
+  // The verifier, with a speech bubble saying what it believes on this network.
+  function saysPanel(content, card, v) {
+    const text = verifierSays(content, card, v);
+    if (!text) return null;
+    return h("div.says", null, mascot(v),
+      h("p.bubble", null, h("span.sr-only", { text: "The verifier (" + content.versions[v].name + " version) says: " }), text));
+  }
+
   // The network itself: routers, links, costs or areas, sessions, failures; no routes.
   function configFigure(levelKey, content, card, oi, v) {
     const failures = card.states[oi].failures;
@@ -1224,8 +1272,8 @@
     return [ask, reveal];
   }
 
-  const netPanel = (title, blurb, fig, radios) => h("section.panel.netpanel", { "aria-labelledby": "card-title" },
-    h("h2#card-title.card-title", { id: "card-title", text: title }), blurb ? richText("p.card-blurb", blurb) : null, fig, radios || null);
+  const netPanel = (title, blurb, fig, radios, says) => h("section.panel.netpanel", { "aria-labelledby": "card-title" },
+    h("h2#card-title.card-title", { id: "card-title", text: title }), blurb ? richText("p.card-blurb", blurb) : null, says || null, fig, radios || null);
 
   // ---------- story ----------
 
@@ -1287,7 +1335,7 @@
         h("p.step-lead", { text: ver.blurb }),
         howTo(content, v === 0)),
       h("div.bench", null,
-        netPanel(ct.title + optLabel, ct.blurb, configFigure(levelKey, content, card, oi, v)),
+        netPanel(ct.title + optLabel, ct.blurb, configFigure(levelKey, content, card, oi, v), null, saysPanel(content, card, v)),
         rulebook(content, v, lit)),
       quizPanel(ctx, on, st.card, oi, v, { closing: v === 2 ? closingNote(content) : null }),
       nav);
@@ -1338,13 +1386,13 @@
           h("button.btn-quiet", { type: "button", "data-focus-key": "to-story", on: { click: on.backToStory } }, "← Back to the story"))),
       strip,
       h("div.bench", null,
-        netPanel(ct.title, ct.blurb, configFigure(levelKey, content, card, oi, v), radios),
+        netPanel(ct.title, ct.blurb, configFigure(levelKey, content, card, oi, v), radios, saysPanel(content, card, v)),
         rulebook(content, v, lit)),
       quizPanel(ctx, on, ci, oi, v));
   }
 
   HSA.view = { h, drawNet, landing, story, explore, compareRows,
     routeChain, routeEdges, deciderFor, mistakeFor, routerIds, ridLabel,
-    hopShape, chipSpots, idSpots, areaRegions, positions, VIEW, ruleGapText, ruleChanges, TITLE,
+    hopShape, chipSpots, idSpots, areaRegions, verifierSays, positions, VIEW, ruleGapText, ruleChanges, TITLE,
     cardText, optionText, answerText, quizText, revealFacts };
 })(globalThis);

@@ -670,5 +670,18 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.ospf = {
    "Gold and pink arrows",
    "the first step from the router in the question (dashed ring) toward its destination, according to bgpsim (gold) and to the verifier (pink)."
   ]
- ]
+ ],
+ "verifierSays": {
+  "default": [
+   "I don’t know anything about OSPF areas. To me, everything is in area 0!",
+   "If a router has a link in area 0, I only consider paths to it through area 0.",
+   "I now agree with bgpsim on every test. But does that make me right?"
+  ],
+  "area_forced_backbone": {
+   "0": "Any router can pass traffic from one area to another. Who needs area 0?"
+  },
+  "octr_04_intra_beats_cheaper_backbone": {
+   "0": "The cheapest path always wins. Staying inside one area? I don’t care about that."
+  }
+ }
 };

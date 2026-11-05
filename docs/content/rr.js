@@ -574,5 +574,21 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.rr = {
    "Gold and pink arrows",
    "how the route reaches the router in the question (dashed ring), according to Batfish (gold) and to the verifier (pink)."
   ]
- ]
+ ],
+ "verifierSays": {
+  "default": [
+   "Clients or regular peers, a route is a route to me. And I never count reflections.",
+   "On a tie, I compare entry-router numbers first, and only then the number of reflections.",
+   "I now agree with Batfish on every test. But does that make me right?"
+  ],
+  "case_12": {
+   "0": "A route from a client? I treat it just like one from a regular peer."
+  },
+  "crit_04": {
+   "0": "Reflections? I don’t count them. On a tie, the lower neighbor number wins."
+  },
+  "crit_03": {
+   "0": "Reflections? I don’t count them. On a tie, the lower neighbor number wins."
+  }
+ }
 };
