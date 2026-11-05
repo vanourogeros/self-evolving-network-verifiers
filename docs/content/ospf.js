@@ -683,5 +683,17 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.ospf = {
   "octr_04_intra_beats_cheaper_backbone": {
    "0": "The cheapest path always wins. Staying inside one area? I don’t care about that."
   }
+ },
+ "verifierLearns": {
+  "area_forced_backbone": {
+   "0": "Oh, so inter-area paths must always go through area 0!"
+  },
+  "octr_08_backbone_partitioned_dest": {
+   "0": "Oh, so areas do matter: area 1 can’t join the two pieces of area 0!",
+   "1": "Oh, so area 0 only helps if it can actually reach the destination!"
+  },
+  "octr_04_intra_beats_cheaper_backbone": {
+   "0": "Oh, so a path that stays inside one area wins, even if it costs more!"
+  }
  }
 };

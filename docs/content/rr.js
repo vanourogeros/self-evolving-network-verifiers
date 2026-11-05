@@ -590,5 +590,17 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.rr = {
   "crit_03": {
    "0": "Reflections? I don’t count them. On a tie, the lower neighbor number wins."
   }
+ },
+ "verifierLearns": {
+  "case_12": {
+   "0": "Oh, so a reflector must remember that a route came from its client, and pass it on to everyone!"
+  },
+  "crit_04": {
+   "0": "Oh, so on a tie, the route reflected fewer times wins!",
+   "1": "Oh, so I must compare reflections before entry-router numbers!"
+  },
+  "crit_03": {
+   "0": "Oh, so on a tie, the route reflected fewer times wins!"
+  }
  }
 };

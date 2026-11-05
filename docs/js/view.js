@@ -1051,35 +1051,50 @@
     return own || (vs.default && vs.default[v]) || null;
   }
 
-  // The verifier as a small cartoon robot with a magnifying glass. Its face follows the
-  // version: sure of itself at the start, sure but wrong in a subtler way midway, and
-  // wondering at the end.
-  function mascot(v) {
-    const face = [
-      [s("path.m-line", { d: "M25 26 Q30 22 35 25" }), s("path.m-line", { d: "M45 25 Q50 22 55 26" }),
-        s("path.m-mouth", { d: "M28 42 Q40 53 52 42 Z" })],
-      [s("path.m-line", { d: "M25 25 L35 24" }), s("path.m-line", { d: "M45 22 Q50 20 55 23" }),
-        s("path.m-line", { d: "M31 44 Q40 49 49 43" })],
-      [s("path.m-line", { d: "M25 25 Q30 22 35 24" }), s("path.m-line", { d: "M45 24 Q50 22 55 25" }),
-        s("path.m-line", { d: "M35 46 Q40 44 45 46" }), s("text.m-q", { x: 66, y: 16, text: "?" })],
-    ][Math.max(0, Math.min(2, v))];
-    const look = v === 2 ? -2.5 : 0;
-    return s("svg.mascot", { viewBox: "0 0 84 100", width: 84, height: 100, "aria-hidden": "true", focusable: "false" },
-      s("line.m-line", { x1: 40, y1: 14, x2: 40, y2: 5 }),
-      s("circle.m-accent", { cx: 40, cy: 5, r: 3.5 }),
-      s("rect.m-body", { x: 14, y: 14, width: 52, height: 40, rx: 13 }),
-      s("circle.m-eye", { cx: 31, cy: 33 + look, r: 4.5 }), s("circle.m-eye", { cx: 49, cy: 33 + look, r: 4.5 }),
-      s("circle.m-glint", { cx: 32.5, cy: 31.5 + look, r: 1.4 }), s("circle.m-glint", { cx: 50.5, cy: 31.5 + look, r: 1.4 }),
-      face,
-      s("rect.m-body", { x: 24, y: 58, width: 32, height: 26, rx: 8 }),
-      s("circle.m-accent", { cx: 40, cy: 70, r: 6 }),
-      s("path.m-check", { d: "M37 70 L39.5 72.5 L43.5 67.5" }),
-      s("line.m-line", { x1: 24, y1: 66, x2: 15, y2: 76 }),
-      s("line.m-line", { x1: 56, y1: 66, x2: 64, y2: 60 }),
-      s("circle.m-lens", { cx: 70, cy: 53, r: 8 }),
-      s("line.m-line", { x1: 64, y1: 60, x2: 66, y2: 58 }),
-      s("line.m-line", { x1: 33, y1: 84, x2: 33, y2: 94 }), s("line.m-line", { x1: 47, y1: 84, x2: 47, y2: 94 }),
-      s("line.m-line", { x1: 29, y1: 95, x2: 35, y2: 95 }), s("line.m-line", { x1: 45, y1: 95, x2: 51, y2: 95 }));
+  // The verifier as a small cartoon owl holding a magnifying glass, with ∀ ("for all")
+  // on its chest: a verifier answers for every case at once. Its face follows the mood:
+  // 0 sure of itself (the start), 1 sure but quizzical (midway), 2 wondering (the end),
+  // "learned" wide-eyed after a counterexample.
+  function mascot(mood) {
+    const up = mood === 2 ? -3 : 0, wide = mood === "learned";
+    const er = wide ? 11.5 : 10.5, pr = wide ? 5.5 : 4.5;
+    const brows = {
+      0: [s("path.m-line", { d: "M21 33 Q31 29 40 33" }), s("path.m-line", { d: "M44 33 Q53 29 63 33" })],
+      1: [s("path.m-line", { d: "M22 30 L40 32" }), s("path.m-line", { d: "M44 30 Q53 23 62 28" })],
+      2: [s("path.m-line", { d: "M22 28 Q31 24 39 28" }), s("path.m-line", { d: "M45 28 Q53 24 62 28" }), s("text.m-mark", { x: 70, y: 16, text: "?" })],
+      learned: [s("path.m-line", { d: "M22 25 Q31 20 39 25" }), s("path.m-line", { d: "M45 25 Q53 20 62 25" }), s("text.m-mark", { x: 70, y: 16, text: "!" })],
+    }[mood];
+    // A sure owl's eyes are half closed: a lid over the top of each.
+    const lids = mood === 0 ? [32, 52].map((cx) => s("path.m-lid", { d: "M" + (cx - er) + " 38 A" + er + " " + er + " 0 0 1 " + (cx + er) + " 38 Z" })) : [];
+    const beak = wide
+      ? [s("path.m-beak", { d: "M37 50 L47 50 L42 54 Z" }), s("path.m-beak", { d: "M38.5 56 L45.5 56 L42 60 Z" })]
+      : [s("path.m-beak", { d: "M37 50 L47 50 L42 57 Z" })];
+    return s("svg.mascot", { viewBox: "0 0 90 100", width: 90, height: 100, "aria-hidden": "true", focusable: "false" },
+      s("path.m-body", { d: "M22 28 L18 10 L33 20 Q42 17 51 20 L66 10 L62 28 Q72 40 72 58 C72 82 60 94 42 94 C24 94 12 82 12 58 Q12 40 22 28 Z" }),
+      s("path.m-line", { d: "M16 58 Q10 72 20 82" }),
+      s("ellipse.m-belly", { cx: 42, cy: 75, rx: 15, ry: 13 }),
+      s("text.m-forall", { x: 42, y: 82, "text-anchor": "middle", text: "∀" }),
+      [32, 52].map((cx) => s("circle.m-eyeball", { cx, cy: 40, r: er })),
+      [32, 52].map((cx) => s("circle.m-eye", { cx: cx + (mood === 1 ? 1.5 : 0), cy: 41 + up, r: pr })),
+      [32, 52].map((cx) => s("circle.m-glint", { cx: cx + 1.8 + (mood === 1 ? 1.5 : 0), cy: 39 + up, r: 1.5 })),
+      lids, brows, beak,
+      s("path.m-line", { d: "M64 62 Q70 60 72 54" }),
+      s("circle.m-lens", { cx: 77, cy: 47, r: 8 }),
+      s("path.m-feet", { d: "M33 94 L31 98 M35 94 L35 98 M37 94 L39 98 M47 94 L45 98 M49 94 L49 98 M51 94 L53 98" }));
+  }
+
+  // The verifier after a counterexample, saying what it learned from it; null when the
+  // content has no line for this network and version.
+  function learnedPanel(content, card, v) {
+    const t = verifierLearns(content, card, v);
+    if (!t) return null;
+    return h("div.says.says-learned", null, mascot("learned"),
+      h("p.bubble", null, h("span.sr-only", { text: "What the verifier learns: " }), t));
+  }
+
+  function verifierLearns(content, card, v) {
+    const vl = content && content.verifierLearns;
+    return (vl && vl[card.id] && vl[card.id][String(v)]) || null;
   }
 
   // The verifier, with a speech bubble saying what it believes on this network.
@@ -1266,6 +1281,7 @@
         h("p.why-row", null, h("span.rule-ref", { text: "rule " + m.rule }), " ", h("span", { text: m.why })),
         h("p.why-row.why-ref", null, h("strong", { text: content.oracleName + ": " }), h("span", { text: m.reference })))
         : null,
+      m ? learnedPanel(content, card, v) : null,
       m && v < 2 ? fixBlock(content, v) : null,
       o.closing,
       h("details.more", null, h("summary", { text: "Every router's answer" }), compare(levelKey, content, card, f.result, v)));
@@ -1393,6 +1409,6 @@
 
   HSA.view = { h, drawNet, landing, story, explore, compareRows,
     routeChain, routeEdges, deciderFor, mistakeFor, routerIds, ridLabel,
-    hopShape, chipSpots, idSpots, areaRegions, verifierSays, positions, VIEW, ruleGapText, ruleChanges, TITLE,
+    hopShape, chipSpots, idSpots, areaRegions, verifierSays, verifierLearns, positions, VIEW, ruleGapText, ruleChanges, TITLE,
     cardText, optionText, answerText, quizText, revealFacts };
 })(globalThis);
