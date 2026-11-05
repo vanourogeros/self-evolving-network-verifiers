@@ -192,9 +192,9 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.ospf = {
     },
     {
      "id": 5,
-     "text": "A destination with a working area-0 link must be reached through area 0.",
+     "text": "A destination with a working area-0 link is never entered from its own area.",
      "change": "new",
-     "wrong": "The verifier trusts any working area-0 link, while it should actually trust it only if it is in the same piece of area 0."
+     "wrong": "The verifier trusts any working area-0 link of the destination, while it should actually trust it only if area 0 reaches the destination."
     },
     {
      "id": 6,
@@ -206,7 +206,7 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.ospf = {
     "round": 5,
     "proposals": 8,
     "excerpt": "-            Some(self.backbone_live(t))\n…\n+                        // only happens when `t` is NOT reachable as a plain backbone\n+                        // destination from `b1`'s backbone component: if `da[0](b1,\n+                        // t)` is valid, `t` is already in that backbone's LSDB and is\n+                        // reached intra-backbone (`a_t == 0`), never re-summarized —\n…\n+                        // supersedes a purely-local `backbone_live(t)` check, which\n+                        // conflates \"link up\" with \"reachable through the backbone\".\n+                        let dest_via_backbone = self.da[&0].get_cost(&self.sym(b1), &self.sym(t));\n+                        let descent_ok = dest_via_backbone.is_none();\n…\n-                                dest_not_bb_live = live.not();\n+                            conj.push(&descent_ok);",
-    "explain": "Link up ≠ reachable. The mid-run version checked only that the destination had an area-0 link that was up, but here t's only backbone link leads to x, a piece of the backbone cut off from b1 and b2, so it wrongly ruled out the path into t through area 1 and declared t unreachable. The fix asks whether the destination is actually reachable through the backbone from the border router."
+    "explain": "A working link is not the same as being reachable. The Midway version checked only that the destination had an area-0 link that was up, but here t's only backbone link leads to x, a piece of the backbone cut off from b1 and b2, so it wrongly ruled out the path into t through area 1 and declared t unreachable. The fix asks whether the destination is actually reachable through the backbone from the border router."
    }
   },
   {
@@ -235,7 +235,7 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.ospf = {
     },
     {
      "id": 5,
-     "text": "A destination is reached through area 0 only if area 0 can actually get there.",
+     "text": "A destination is entered from its own area only when area 0 cannot reach it.",
      "change": "changed"
     },
     {
@@ -248,7 +248,7 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.ospf = {
   }
  ],
  "twist": null,
- "bonus": "Two AI agents built OSPF rules that give the same answers. But on an 18-router network, one could not finish a check in 20 minutes while the other took 0.16 s. Asked to make its rules scale, the slow one fixed this in two rounds (0.4 s).",
+ "bonus": "Two AI agents each built OSPF rules that pass every test. But on an 18-router network, one (the one shown here) could not finish a check in 20 minutes, while the other took 0.16 s. Asked to make its rules scale, the slow one fixed this in two rounds (0.4 s).",
  "endText": "The Final version agrees with bgpsim on every network here and on all 544 tests of the run. But passing every test is not a proof that it is right. When can we trust it? Come and argue with us at the poster.",
  "deciders": {
   "area_forced_backbone": {
@@ -528,7 +528,7 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.ospf = {
       "because": "areas ignored: r0–r1–r2–r3 costs 3, cheaper than r0–r4–r3 at 10 → r1"
      },
      "oracle": {
-      "because": "r0 and r3 share area 1; the intra-area path r0–r4–r3 (10) beats the backbone path (3) → r4"
+      "because": "r0 and r3 share area 1; the intra-area path r0–r4–r3 (10) beats the path through area 0 (3) → r4"
      }
     },
     {
@@ -537,7 +537,7 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.ospf = {
       "because": "r0 and r3 share area 1; intra-area r0–r4–r3 (10) beats the backbone path (3) → r4"
      },
      "oracle": {
-      "because": "r0 and r3 share area 1; the intra-area path r0–r4–r3 (10) beats the backbone path (3) → r4"
+      "because": "r0 and r3 share area 1; the intra-area path r0–r4–r3 (10) beats the path through area 0 (3) → r4"
      }
     },
     {
@@ -546,7 +546,7 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.ospf = {
       "because": "r0 and r3 share area 1; intra-area r0–r4–r3 (10) beats the backbone path (3) → r4"
      },
      "oracle": {
-      "because": "r0 and r3 share area 1; the intra-area path r0–r4–r3 (10) beats the backbone path (3) → r4"
+      "because": "r0 and r3 share area 1; the intra-area path r0–r4–r3 (10) beats the path through area 0 (3) → r4"
      }
     }
    ],
@@ -603,8 +603,8 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.ospf = {
     },
     "1": {
      "rule": 5,
-     "why": "t has a working area-0 link (to x), so it insists on reaching t through area 0, finds no way, and gives up.",
-     "reference": "that area-0 link only leads to x, which is cut off from b1, so it uses area 1: b1–b2–t, cost 2."
+     "why": "t has a working area-0 link (to x), so it refuses to enter t from area 1, finds no other way in, and gives up.",
+     "reference": "t’s area-0 link only leads to x, which is cut off from b1, so the path enters t from area 1: b1–b2 (area 0), then b2–t, cost 2."
     }
    },
    "fail (0, 1)": {
@@ -615,8 +615,8 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.ospf = {
     },
     "1": {
      "rule": 5,
-     "why": "t has a working area-0 link (to x), so it insists on reaching t through area 0, finds no way, and gives up.",
-     "reference": "that area-0 link only leads to x, which is cut off from b1, so it uses area 1: b1–b2–t, cost 2."
+     "why": "t has a working area-0 link (to x), so it refuses to enter t from area 1, finds no other way in, and gives up.",
+     "reference": "t’s area-0 link only leads to x, which is cut off from b1, so the path enters t from area 1: b1–b2 (area 0), then b2–t, cost 2."
     }
    }
   },
@@ -665,7 +665,7 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.ospf = {
   ],
   [
    "Reference",
-   "bgpsim, a network simulator that follows OSPF. Where the rules say “Real OSPF”, bgpsim behaves the same way."
+   "bgpsim, a network simulator that follows OSPF."
   ],
   [
    "Gold and pink arrows",
@@ -675,7 +675,7 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.ospf = {
  "verifierSays": {
   "default": [
    "I don’t know anything about OSPF areas. To me, everything is in area 0!",
-   "If a router has a link in area 0, I only consider paths to it through area 0.",
+   "From another area, I only enter a router with a working area-0 link through area 0.",
    "I now agree with bgpsim on every test. But does that make me right?"
   ],
   "area_forced_backbone": {

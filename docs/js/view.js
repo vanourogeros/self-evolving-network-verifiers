@@ -711,7 +711,7 @@
       items.push([sw("link"), "cable, with its cost"]);
       if (card.net.sessions.some((x) => x.type === "IBgpClient"))
         items.push([s("svg.swatch", { viewBox: "0 0 36 12", width: 36, height: 12, "aria-hidden": "true" },
-          s("path.client", { d: "M2 6 L28 6" }), s("path.arrowhead", { d: "M26 2 L34 6 L26 10 z" })), "reflector → its client (routes pass only along arrows and dashes)"]);
+          s("path.client", { d: "M2 6 L28 6" }), s("path.arrowhead", { d: "M26 2 L34 6 L26 10 z" })), "arrow from a reflector to its client (routes travel either way along arrows and dashes)"]);
       if (card.net.sessions.some((x) => x.type === "IBgpPeer")) items.push([sw("peer"), "regular peers"]);
     }
     if (level !== "ospf") items.push([sw("ebgp-edge"), "where the route comes in from outside"]);
@@ -751,7 +751,7 @@
   // The reference's answer as a sentence, and the question to the visitor.
   function quizText(levelKey, content, q, oracleAnswer, vname) {
     const subject = q.kind === "next_hop" ? q.src : q.router;
-    const normally = "The correct answer, from " + content.oracleName + " (the reference): " + answerClause(levelKey, q, oracleAnswer, subject) + ".";
+    const normally = content.oracleName + " (the reference) says " + answerClause(levelKey, q, oracleAnswer, subject) + ".";
     if (levelKey === "ospf")
       return { normally, ask: "Does the verifier get it right? Using the " + vname + " rules, how will it say " + q.src + " sends traffic for " + q.dst + "?" };
     return { normally, ask: "Does the verifier get it right? Using the " + vname + " rules, where will it say " + q.router + " gets the route?" };
@@ -780,7 +780,7 @@
     const q = ve.question;
     const subject = q.kind === "next_hop" ? q.src : q.router;
     const usable = m && !m.unsat && cell.status !== "panic";
-    const refSays = content.oracleName + " says " + answerClause(levelKey, q, ve.oracleAnswer, usable ? "it" : subject);
+    const refSays = content.oracleName + " says " + answerClause(levelKey, q, ve.oracleAnswer, subject);
     const headline = !broke
       ? "The verifier gets it right: like " + content.oracleName + ", it says " + answerClause(levelKey, q, ve.oracleAnswer, subject) + "."
       : usable
@@ -831,7 +831,8 @@
 
   // The loop, in two layouts with the same parts: wide (left to right) and tall (top
   // to bottom, for phones). Each test network goes to the verifier and the reference;
-  // their answers are compared; a difference goes to the AI fixer, agreement to the AI tester.
+  // their answers are compared; a difference goes to the AI fixer, and once every test
+  // agrees, the AI tester adds a harder one.
   const LOOP = {
     wide: { vb: "0 0 860 316", w: 174, h: 64,
       boxes: { tests: [95, 154, 154, 68], verifier: [300, 84], reference: [300, 236], fixer: [680, 84], tester: [680, 236] },
@@ -839,7 +840,7 @@
       arrows: [["M172 140 L194 140 L194 84 L213 84"], ["M172 168 L194 168 L194 236 L213 236"],
         ["M387 92 L450 130"], ["M387 228 L450 190"], ["M512 138 L594 96", "sd-differ"], ["M512 182 L594 224", "sd-same"],
         ["M680 52 L680 22 L300 22 L300 50", "sd-fix"], ["M680 268 L680 294 L95 294 L95 190", "sd-test"], ["M767 236 L800 236", "sd-done"]],
-      labels: [[202, 164, "each test", null, "start"], [426, 100, "its routes", null, "start"], [426, 226, "real routes", null, "start"],
+      labels: [[202, 164, "each test", null, "start"], [426, 100, "its routes", null, "start"], [426, 226, "its routes", null, "start"],
         [560, 104, "no", "sd-differ"], [560, 222, "yes", "sd-same"], [490, 15, "fixes the rules, then re-checks every test", "sd-fix"],
         [390, 288, "adds a new, harder test", "sd-test"], [828, 272, "none left", "sd-done"]] },
     tall: { vb: "0 0 360 486", w: 150, h: 62, testerSub: "harder tests",
@@ -848,7 +849,7 @@
       arrows: [["M150 70 L112 116"], ["M210 70 L248 116"], ["M112 183 L156 230"], ["M248 183 L204 230"],
         ["M160 290 L118 336", "sd-differ"], ["M200 290 L242 336", "sd-same"],
         ["M21 370 L8 370 L8 150 L19 150", "sd-fix"], ["M339 370 L352 370 L352 40 L257 40", "sd-test"], ["M264 401 L264 430", "sd-done"]],
-      labels: [[180, 98, "each test"], [70, 214, "its routes", null, "start"], [290, 214, "real routes", null, "end"],
+      labels: [[180, 98, "each test"], [70, 214, "its routes", null, "start"], [290, 214, "its routes", null, "end"],
         [124, 312, "no", "sd-differ", "end"], [236, 312, "yes", "sd-same", "start"],
         [14, 262, "fixes rules", "sd-fix", "start"], [346, 262, "harder test", "sd-test", "end"], [210, 452, "none left", "sd-done", "end"]] },
   };
@@ -856,7 +857,7 @@
   function loopSvg(L, cls) {
     const id = "sd" + ++uid;
     const svg = s("svg.sysdiag." + cls, { viewBox: L.vb, role: "img", focusable: "false",
-      "aria-label": "Each test network goes to the verifier and to the reference. Their routes are compared. If they differ, an AI fixer edits the verifier's rules. If they agree, an AI tester looks for a harder test network. The run ends when the tester finds none." });
+      "aria-label": "Each test network goes to the verifier and to the reference, and their routes are compared. If any differ, an AI fixer edits the verifier's rules and every test is checked again. Once all agree, an AI tester looks for a new, harder test network. The run ends when the tester finds none." });
     // One arrowhead per colour (context-stroke is not universal).
     svg.appendChild(s("defs", null, ["plain", "bad", "good"].map((tone) =>
       s("marker", { id: id + "-" + tone, viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 8, markerHeight: 8, orient: "auto-start-reverse", markerUnits: "userSpaceOnUse" },
@@ -880,8 +881,8 @@
       box(B.fixer, "robot", "AI fixer", "edits the rules"),
       box(B.tester, "robot", "AI tester", L.testerSub || "finds harder tests"),
       s("g.sd-compare", null, s("circle", { cx: ccx, cy: ccy, r: cr }),
-        s("text.sd-title", { x: ccx, y: ccy - 3, "text-anchor": "middle", text: "same" }),
-        s("text.sd-title", { x: ccx, y: ccy + 14, "text-anchor": "middle", text: "routes?" })),
+        s("text.sd-title", { x: ccx, y: ccy - 3, "text-anchor": "middle", text: "all" }),
+        s("text.sd-title", { x: ccx, y: ccy + 14, "text-anchor": "middle", text: "agree?" })),
       s("g.sd-donebox", null, s("rect", { x: dx, y: dy, width: dw, height: dh, rx: dh / 2 }),
         s("text.sd-title", { x: dx + dw / 2, y: dy + dh / 2 + 5, "text-anchor": "middle", text: "done" })));
     svg.append(...L.labels.map(([x, y, text, c, anchor]) =>
@@ -892,7 +893,7 @@
   function systemDiagram() {
     return h("figure.sysfig", null,
       h("div.sysfig-frame", null, loopSvg(LOOP.wide, "sd-wide"), loopSvg(LOOP.tall, "sd-tall")),
-      h("figcaption", { text: "The verifier and the reference answer the same test networks. Where their routes differ, the AI fixer edits the verifier's rules; where they agree, the AI tester looks for a harder network. The run ends when it finds none." }));
+      h("figcaption", { text: "The verifier and the reference answer the same test networks. Where their routes differ, the AI fixer edits the verifier's rules, and every test is checked again. Once all tests agree, the AI tester looks for a new, harder network. The run ends when it finds none." }));
   }
 
   // ---------- page top (story and explorer) ----------
@@ -909,15 +910,15 @@
   // the two interactive examples.
   function landing(list, on) {
     const stats = [
-      ["blocks", "3", "features taught to a 3,000-line verifier: OSPF areas, BGP route reflection, and VPNs"],
-      ["check", "6 runs", "all ended in full agreement with the reference on every test (with a smaller AI model, the runs never got there)"],
-      ["coin", "$19–42", "of AI usage per run, with no expert in the loop"],
+      ["blocks", "3", "features taught to a 3,000-line verifier: OSPF areas, BGP route reflection, and VPNs (the paper covers the third)"],
+      ["check", "6 runs", "all ended with the verifier agreeing with its reference on every test of a large, AI-grown test set (a smaller AI model never got there)"],
+      ["coin", "$19–42", "of AI usage per run, with no expert in the loop beyond checking the end result"],
     ];
     const next = [
       ["magnifier", "Is passing every test enough?", "Tests check one network at a time; a verifier must be right for all of them. We want ways to know when the tests cover enough."],
-      ["stopwatch", "Fast, not just correct", "Two versions that give the same answers can differ by more than 1000× in speed. The loop should improve speed too."],
+      ["stopwatch", "Fast, not just correct", "Two versions that pass the same tests can differ by more than 1000× in speed. The loop should improve speed too."],
       ["bars", "More than where traffic goes", "Operators also care about what happens while routing settles, and about how loaded links get."],
-      ["share", "One verifier per network?", "If a faithful verifier costs days and tens of dollars, every network could grow its own, and share its hardest tests with others."],
+      ["share", "One verifier per network?", "If a faithful verifier costs only tens of dollars, every network could grow its own, and share its hardest tests with others."],
     ];
     const section = (id, title, ...kids) => h("section.proj-sec", { "aria-labelledby": id }, h("h2#" + id + ".proj-h", { id, text: title }), kids);
     return h("div.screen.landing.wrap", null,
@@ -1238,7 +1239,7 @@
     if (!rv || !next) return null;
     const found = rv.proposals > 0
       ? "The AI tester came up with this network in round " + rv.round + " of the run; the AI fixer then changed the rules."
-      : "The starting tests already caught this; the AI fixer changed the rules in round " + rv.round + " of the run.";
+      : "The starting tests already caught this; the AI fixer changed the rules early in the run.";
     return h("div.fix", null,
       h("h3.label", { text: "How the AI fixed it" }),
       h("ol.rchanges", null, ruleChanges(content.versions, v).map((c) => h("li.rchange", null,
@@ -1420,7 +1421,7 @@
       h("div.step-head", null,
         h("p.kicker", { text: content.title + " · try another network" }),
         h("h1#step-title.display-sm", { id: "step-title", tabindex: "-1", text: "Try another network" }),
-        h("p.step-lead", { text: "Pick a version and a network, then guess what the verifier does. Some networks trip it up; most don't." }),
+        h("p.step-lead", { text: "Pick a version and a network, then guess what the verifier does. The early versions trip up on some networks; the final one gets all of these right." }),
         h("div.explore-bar", null, tabs,
           h("button.btn-quiet", { type: "button", "data-focus-key": "to-story", on: { click: on.backToStory } }, "← Back to the story"))),
       strip,

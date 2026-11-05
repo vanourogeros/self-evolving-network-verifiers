@@ -1,7 +1,7 @@
 window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.rr = {
  "title": "Route reflection",
  "oracleName": "Batfish",
- "intro": "BGP is how networks exchange routes. In a large network, routers don't all exchange routes directly: a route reflector passes routes on to the routers it serves, its clients. The reference here is Batfish, a widely used network simulator.",
+ "intro": "BGP is how networks exchange routes. In a large network, routers don't all exchange routes directly: a route reflector passes routes on to the routers it serves, its clients. The reference here is Batfish, a widely used tool that works out, from configuration files, which routes a network will choose.",
  "layout": {
   "case_12": {
    "r1": [
@@ -121,7 +121,7 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.rr = {
  "versions": [
   {
    "name": "Start",
-   "blurb": "Before the AI's work: the verifier does not support route reflection yet. It has a basic pass-along rule, but no working notion of clients and no reflection count.",
+   "blurb": "Before the AI's work: the verifier has a basic pass-along rule, but it forgets which routes came from a client, and it does not count reflections.",
    "rules": [
     {
      "id": 1,
@@ -136,7 +136,7 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.rr = {
     },
     {
      "id": 3,
-     "text": "Routes from clients or from outside go to everyone; routes from regular peers go only to clients.",
+     "text": "Routes from clients or outside go to everyone; routes from regular peers go only to clients and outside.",
      "change": "same"
     },
     {
@@ -175,14 +175,14 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.rr = {
     },
     {
      "id": 3,
-     "text": "Routes from clients or from outside go to everyone; routes from regular peers go only to clients.",
+     "text": "Routes from clients or outside go to everyone; routes from regular peers go only to clients and outside.",
      "change": "same"
     },
     {
      "id": 4,
      "text": "Tie-break: cheaper path, then lower entry-router number, then fewer reflections, then lower neighbor number.",
      "change": "changed",
-     "wrong": "The verifier compares entry-router numbers before reflections, while it should actually compare the number of reflections first."
+     "wrong": "The verifier compares entry-router numbers before reflections, while it should actually compare reflections first, right after path cost."
     },
     {
      "id": 5,
@@ -218,7 +218,7 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.rr = {
     },
     {
      "id": 3,
-     "text": "Routes from clients or from outside go to everyone; routes from regular peers go only to clients.",
+     "text": "Routes from clients or outside go to everyone; routes from regular peers go only to clients and outside.",
      "change": "same"
     },
     {
@@ -240,7 +240,7 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.rr = {
    "reveal": null
   }
  ],
- "twist": "Comparing reflections before the entry router is Batfish's choice. Real routers running FRR (common open-source router software, version 8.4) compare the entry router first by default, as the Midway version did. So the final verifier is exactly as correct as its reference, and no more.",
+ "twist": "Comparing reflections before the entry router is Batfish's choice. Real routers running FRR (common open-source router software, version 8.4) compare the entry router first by default, as the Midway version did. So the final verifier is only as faithful as its reference, and no more.",
  "bonus": null,
  "endText": "The Final version agrees with Batfish on every network here and on all 600 tests of the run. But passing every test is not a proof that it is right. When can we trust it? Come and argue with us at the poster.",
  "deciders": {
@@ -505,7 +505,7 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.rr = {
       "T": "reflected 2×",
       "N": "reflected 1×"
      },
-     "why": "Both paths to the entry router cost 3, so it falls back to the neighbor number: T (2) is lower than N (5).",
+     "why": "The paths to each copy's entry router both cost 3, so it falls back to the neighbor number: T (2) is lower than N (5).",
      "reference": "next prefers the route reflected fewer times: N's (once) beats T's (twice).",
      "missing": true
     },
@@ -566,7 +566,7 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.rr = {
   ],
   [
    "Cables and sessions",
-   "grey lines are cables, with their cost. Routes are passed only over sessions: blue arrows from a route reflector to its client, or dashed lines between regular peers."
+   "grey lines are cables, with their cost. Routes are passed only over sessions, in either direction: blue arrows point from a route reflector to its client; dashed lines join regular peers."
   ],
   [
    "#n",
@@ -595,14 +595,14 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.rr = {
  },
  "verifierLearns": {
   "case_12": {
-   "0": "Oh, so a reflector must remember that a route came from its client, and pass it on to everyone!"
+   "0": "Oh, so a reflector must remember a route came from its client, and pass it to all other neighbors!"
   },
   "crit_04": {
-   "0": "Oh, so on a tie, the route reflected fewer times wins!",
+   "0": "Oh, so when path costs tie, the route reflected fewer times wins!",
    "1": "Oh, so I must compare reflections before entry-router numbers!"
   },
   "crit_03": {
-   "0": "Oh, so on a tie, the route reflected fewer times wins!"
+   "0": "Oh, so when path costs tie, the route reflected fewer times wins!"
   }
  }
 };
