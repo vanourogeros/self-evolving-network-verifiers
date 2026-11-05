@@ -506,7 +506,8 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.rr = {
       "N": "reflected 1×"
      },
      "why": "Both paths to the entry router cost 3, so it falls back to the neighbor number: T (2) is lower than N (5).",
-     "reference": "next prefers the route reflected fewer times: N's (once) beats T's (twice)."
+     "reference": "next prefers the route reflected fewer times: N's (once) beats T's (twice).",
+     "missing": true
     },
     "1": {
      "rule": 4,
@@ -528,7 +529,8 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.rr = {
       "rM": "reflected 2×"
      },
      "why": "Both paths cost 1, so it falls back to the neighbor number: rM (1) is lower than rT (2).",
-     "reference": "next prefers the route reflected fewer times: rT's (once) beats rM's (twice)."
+     "reference": "next prefers the route reflected fewer times: rT's (once) beats rM's (twice).",
+     "missing": true
     }
    }
   }

@@ -1171,7 +1171,16 @@
   // A version's numbered rules. A rule that differs from how the reference really
   // behaves carries a "✗ <reference>: …" line; lit = {rule, kind: "mistake" | "decides"}
   // lights one rule.
-  function rulebook(content, v, lit) {
+  // Which of version v's ✗ notes explain the verifier's mistake on this network and
+  // failure: {rules: Set of rule ids, missing: bool}; empty when it gets this one right.
+  function faultNotes(content, card, env, v) {
+    const m = mistakeFor(content, card, env, v);
+    return { rules: new Set(m ? [m.rule] : []), missing: !!(m && m.missing) };
+  }
+
+  // focus (from faultNotes) picks the ✗ notes shown with the rules; the version's other
+  // ✗ notes, which play no part on this network, fold into one line under them.
+  function rulebook(content, v, lit, focus) {
     const versions = content.versions;
     const ver = versions[v];
     const prevName = v > 0 ? versions[v - 1].name : null;
@@ -1189,7 +1198,7 @@
           h("span.rule-body", null,
             h("span.sr", { text: "Rule " + r.id + ": " }),
             richText("span.rule-text", r.text),
-            r.wrong ? h("span.rule-wrong", null, h("span", { "aria-hidden": "true", text: "✗ " }), noteText(r.wrong)) : null,
+            r.wrong && (!focus || focus.rules.has(r.id)) ? h("span.rule-wrong", null, h("span", { "aria-hidden": "true", text: "✗ " }), noteText(r.wrong)) : null,
             badgeText || kind
               ? h("span.rule-tags", null,
                 badgeText ? h("span.rbadge.rbadge-" + badgeText, { text: badgeText }) : null,
@@ -1197,7 +1206,8 @@
                 kind === "decides" ? h("span.rbadge.rbadge-decides", null, h("span", { "aria-hidden": "true", text: "▸ " }), "decides here") : null)
               : null));
       })),
-      ver.missing ? h("p.rules-missing", null, h("span", { "aria-hidden": "true", text: "✗ " }), noteText(ver.missing)) : null,
+      ver.missing && (!focus || focus.missing) ? h("p.rules-missing", null, h("span", { "aria-hidden": "true", text: "✗ " }), noteText(ver.missing)) : null,
+      otherFaults(ver, rules, focus),
       gap ? h("p.rules-gap", { text: gap }) : null,
       content.rulesNote ? h("p.rules-gap", { text: content.rulesNote }) : null);
   }
@@ -1291,6 +1301,19 @@
   const netPanel = (title, blurb, fig, radios, says) => h("section.panel.netpanel", { "aria-labelledby": "card-title" },
     h("h2#card-title.card-title", { id: "card-title", text: title }), blurb ? richText("p.card-blurb", blurb) : null, says || null, fig, radios || null);
 
+  // The version's ✗ notes that play no part on this network, folded away; null when
+  // there are none.
+  function otherFaults(ver, rules, focus) {
+    if (!focus) return null;
+    const notes = rules.filter((r) => r.wrong && !focus.rules.has(r.id)).map((r) => ["Rule " + r.id + ": ", r.wrong]);
+    if (ver.missing && !focus.missing) notes.push(["Missing: ", ver.missing]);
+    if (!notes.length) return null;
+    const none = !focus.rules.size && !focus.missing;
+    return h("details.rules-other", null,
+      h("summary", { text: (none ? "This version's mistakes" : "Other mistakes in this version") + " (" + notes.length + "), none of them involved on this network" }),
+      h("ul", null, notes.map(([lead, note]) => h("li", null, h("strong.rules-other-lead", { text: lead }), noteText(note)))));
+  }
+
   // ---------- story ----------
 
   function progress(ctx, on) {
@@ -1352,7 +1375,7 @@
         howTo(content, v === 0)),
       h("div.bench", null,
         netPanel(ct.title + optLabel, ct.blurb, configFigure(levelKey, content, card, oi, v), null, saysPanel(content, card, v)),
-        rulebook(content, v, lit)),
+        rulebook(content, v, lit, faultNotes(content, card, card.states[oi].env, v))),
       quizPanel(ctx, on, st.card, oi, v, { closing: v === 2 ? closingNote(content) : null }),
       nav);
   }
@@ -1403,12 +1426,12 @@
       strip,
       h("div.bench", null,
         netPanel(ct.title, ct.blurb, configFigure(levelKey, content, card, oi, v), radios, saysPanel(content, card, v)),
-        rulebook(content, v, lit)),
+        rulebook(content, v, lit, faultNotes(content, card, card.states[oi].env, v))),
       quizPanel(ctx, on, ci, oi, v));
   }
 
   HSA.view = { h, drawNet, landing, story, explore, compareRows,
     routeChain, routeEdges, deciderFor, mistakeFor, routerIds, ridLabel,
-    hopShape, chipSpots, idSpots, areaRegions, verifierSays, verifierLearns, positions, VIEW, ruleGapText, ruleChanges, TITLE,
+    hopShape, chipSpots, idSpots, areaRegions, verifierSays, verifierLearns, faultNotes, positions, VIEW, ruleGapText, ruleChanges, TITLE,
     cardText, optionText, answerText, quizText, revealFacts };
 })(globalThis);

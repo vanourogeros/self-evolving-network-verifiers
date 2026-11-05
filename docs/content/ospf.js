@@ -625,7 +625,8 @@ window.HSA_CONTENT = window.HSA_CONTENT || {}; window.HSA_CONTENT.ospf = {
     "0": {
      "rule": 2,
      "why": "Ignoring areas, the cheapest path is r0–r1–r2–r3, cost 3.",
-     "reference": "r0 and r3 share area 1, and a path inside one area always wins: r0–r4–r3, cost 10."
+     "reference": "r0 and r3 share area 1, and a path inside one area always wins: r0–r4–r3, cost 10.",
+     "missing": true
     }
    }
   }
