@@ -1,5 +1,6 @@
 // The page background: a faint network of drifting routers, linked when close, with
-// small packets travelling along the links. Drawn on one fixed canvas behind the page;
+// small packets travelling along the links, and logic symbols that fade in, drift and
+// fade out. Drawn on one fixed canvas behind the page;
 // a single still frame for visitors who prefer reduced motion; paused in hidden tabs.
 (function (root) {
   if (typeof document === "undefined") return;
@@ -8,14 +9,15 @@
   const LINK = 170;       // px: routers closer than this are linked
   const FPS = 30;
   let canvas, ctx, w = 0, h = 0, dpr = 1;
-  let nodes = [], packets = [], colors = null, last = 0, spawn = 0, raf = 0;
+  let nodes = [], packets = [], glyphs = [], colors = null, last = 0, spawn = 0, raf = 0;
+  const SYMBOLS = ["∀", "∃", "⊨", "⊢", "∧", "∨", "¬", "⇒", "≡", "⊥", "⊤", "∈", "λ", "□", "◇", "∅"];
 
   const reduced = () => { try { return root.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { return true; } };
 
   function readColors() {
     const css = root.getComputedStyle(document.documentElement);
     const v = (name) => css.getPropertyValue(name).trim();
-    colors = { node: v("--muted"), link: v("--muted"), packets: [v("--accent"), v("--route-oracle"), v("--route-model")] };
+    colors = { node: v("--muted"), link: v("--muted"), packets: [v("--accent"), v("--route-oracle"), v("--route-model")], font: v("--sans") || "sans-serif" };
   }
 
   function resize() {
@@ -27,6 +29,18 @@
     while (nodes.length < want) nodes.push(node());
     nodes.length = want;
     for (const n of nodes) { n.x = Math.min(n.x, w); n.y = Math.min(n.y, h); }
+    const wantG = Math.max(6, Math.min(18, Math.round((w * h) / 90000)));
+    while (glyphs.length < wantG) glyphs.push(glyph(Math.random()));
+    glyphs.length = wantG;
+  }
+
+  // A symbol partway (age 0..1) through its life: it fades in, drifts and fades out.
+  function glyph(age) {
+    const a = Math.random() * Math.PI * 2, sp = 3 + Math.random() * 6;
+    return { x: Math.random() * w, y: Math.random() * h, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+      text: SYMBOLS[(Math.random() * SYMBOLS.length) | 0], size: 16 + Math.random() * 18,
+      rot: (Math.random() - 0.5) * 0.5, spin: (Math.random() - 0.5) * 0.06,
+      life: 9 + Math.random() * 9, age, tint: Math.random() < 0.25 };
   }
 
   function node() {
@@ -50,6 +64,11 @@
         color: colors.packets[(Math.random() * colors.packets.length) | 0] });
     }
     for (const p of packets) p.t += dt / p.dur;
+    for (let i = 0; i < glyphs.length; i++) {
+      const g = glyphs[i];
+      g.x += g.vx * dt; g.y += g.vy * dt; g.rot += g.spin * dt; g.age += dt / g.life;
+      if (g.age >= 1) glyphs[i] = glyph(0);
+    }
     packets = packets.filter((p) => p.t < 1 && Math.hypot(p.a.x - p.b.x, p.a.y - p.b.y) < LINK * 1.2);
   }
 
@@ -65,6 +84,16 @@
         ctx.globalAlpha = 0.22 * (1 - d / LINK);
         ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
       }
+    }
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    for (const g of glyphs) {
+      ctx.save();
+      ctx.translate(g.x, g.y); ctx.rotate(g.rot);
+      ctx.font = "600 " + g.size.toFixed(0) + "px " + colors.font;
+      ctx.fillStyle = g.tint ? colors.packets[0] : colors.node;
+      ctx.globalAlpha = 0.3 * Math.sin(Math.PI * g.age);
+      ctx.fillText(g.text, 0, 0);
+      ctx.restore();
     }
     ctx.fillStyle = colors.node;
     ctx.globalAlpha = 0.45;
