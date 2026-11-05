@@ -205,7 +205,10 @@ button { font: inherit; color: inherit; }
 
 .landing { max-width: 900px; }
 .proj-hero { text-align: center; padding: clamp(1rem, 4vw, 2.5rem) 0 0.5rem; }
-.proj-hero .display { max-width: 18ch; margin: 0 auto; }
+/* The title stays on one line, shrinking with the viewport; on phones, where one line
+   would make it smaller than the author names, it wraps instead. */
+.proj-hero .display { margin: 0 auto; white-space: nowrap; font-size: clamp(1.75rem, 5vw, 3.2rem); }
+@media (max-width: 560px) { .proj-hero .display { white-space: normal; font-size: 2rem; } }
 .authors { margin: 1.1rem 0 0.2rem; font-size: 1.2rem; color: var(--ink); }
 .affil, .venue { margin: 0.15rem 0; font-size: 1.05rem; color: var(--muted); }
 .venue { font-weight: 600; color: var(--ink); }
