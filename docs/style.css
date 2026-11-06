@@ -763,11 +763,16 @@ body.kiosk .wrap { max-width: 1500px; }
 /* ---------- the verifier, speaking ---------- */
 
 .says { display: flex; align-items: center; gap: 0.4rem; margin: 0.6rem 0 0.8rem; }
-.mascot { flex: none; width: 56px; height: 100px; }
+.mascot { flex: none; width: 80px; height: 110px; }
 .mascot .m-line { fill: none; stroke: var(--ink); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
 .mascot .m-thin { stroke-width: 2; }
 .mascot .m-head { fill: var(--panel); stroke: var(--route-model); stroke-width: 3; }
 .mascot .m-eye, .mascot .m-mouth { fill: var(--ink); }
+.mascot .m-hat { fill: var(--ink); }
+.mascot .m-band { fill: var(--route-model); }
+.mascot .m-cape { fill: color-mix(in srgb, var(--route-model) 30%, transparent); stroke: var(--route-model); stroke-width: 1.5; stroke-linejoin: round; }
+.mascot .m-monocle { fill: color-mix(in srgb, var(--accent) 15%, transparent); stroke: var(--ink); stroke-width: 1.6; }
+.mascot .m-chain { fill: none; stroke: var(--muted); stroke-width: 1; stroke-dasharray: 1.5 1.5; }
 .mascot .m-mark { font-family: var(--sans); font-size: 18px; font-weight: 800; fill: var(--route-model); }
 .says-learned { margin: 0.9rem 0 0.4rem; }
 .bubble {
@@ -781,6 +786,6 @@ body.kiosk .wrap { max-width: 1500px; }
 .bubble::after { left: -12px; margin-top: -8px; border-width: 8px 13px 8px 0; border-right-color: var(--paper); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 @media (max-width: 520px) {
-  .mascot { width: 43px; height: 76px; }
+  .mascot { width: 58px; height: 80px; }
   .bubble { font-size: 0.92rem; }
 }
