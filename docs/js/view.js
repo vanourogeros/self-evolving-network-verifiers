@@ -1052,34 +1052,30 @@
     return own || (vs.default && vs.default[v]) || null;
   }
 
-  // The verifier as a stick figure drawn from logic symbols: a φ for the head (its
-  // stroke runs on down as the spine), a ⊤ for shoulders and arms, a ∧ for legs. The
-  // mood shows in the arms and face: 0 arms out, sure of itself (the start); 1 one arm
-  // raised, making a point (midway); 2 scratching its head, wondering (the end);
-  // "learned" both arms up in a ∨ after a counterexample.
+  // The verifier as a figure drawn from logic symbols: its body is a double turnstile ⊨
+  // ("satisfies"), arms pointing at its claim in the speech bubble; its legs a ∧. The
+  // face and a mark carry the mood: 0 sure of itself (the start); 1 an eyebrow up
+  // (midway); 2 wondering, with a "?" (the end); "learned" arms up in a ∨ and a "!"
+  // after a counterexample.
   function mascot(mood) {
-    const arms = {
-      0: ["M17 50 L53 50"],
-      1: ["M17 50 L35 50", "M35 50 L52 36"],
-      2: ["M17 50 L35 50", "M35 50 L53 45 L50 30"],
-      learned: ["M35 50 L19 33", "M35 50 L51 33"],
-    }[mood];
+    const body = mood === "learned"
+      ? ["M24 70 L24 40", "M24 52 L10 36", "M24 52 L38 36"]
+      : ["M24 40 L24 70", "M24 50 L46 50", "M24 61 L46 61"];
     const face = {
-      0: [s("path.m-line.m-thin", { d: "M26 23 L32 23" }), s("path.m-line.m-thin", { d: "M38 23 L44 23" }),
-        s("path.m-line.m-thin", { d: "M28 31 Q35 37 42 31" })],
-      1: [s("circle.m-eye", { cx: 29, cy: 24, r: 2 }), s("circle.m-eye", { cx: 41, cy: 24, r: 2 }),
-        s("path.m-line.m-thin", { d: "M37 18 L44 16" }), s("path.m-line.m-thin", { d: "M29 32 Q35 35 41 31" })],
-      2: [s("circle.m-eye", { cx: 29, cy: 22, r: 2 }), s("circle.m-eye", { cx: 41, cy: 22, r: 2 }),
-        s("path.m-line.m-thin", { d: "M31 32 L39 32" }), s("text.m-mark", { x: 54, y: 16, text: "?" })],
-      learned: [s("circle.m-eye", { cx: 29, cy: 23, r: 2.2 }), s("circle.m-eye", { cx: 41, cy: 23, r: 2.2 }),
-        s("ellipse.m-mouth", { cx: 35, cy: 32, rx: 2.6, ry: 3 }), s("text.m-mark", { x: 54, y: 16, text: "!" })],
+      0: [s("path.m-line.m-thin", { d: "M17 21 L22 21" }), s("path.m-line.m-thin", { d: "M27 21 L32 21" }),
+        s("path.m-line.m-thin", { d: "M18 28 Q24.5 33 31 28" })],
+      1: [s("circle.m-eye", { cx: 19.5, cy: 21, r: 1.9 }), s("circle.m-eye", { cx: 29.5, cy: 21, r: 1.9 }),
+        s("path.m-line.m-thin", { d: "M26.5 15.5 L32.5 14" }), s("path.m-line.m-thin", { d: "M19 28.5 Q24.5 31.5 30 28" })],
+      2: [s("circle.m-eye", { cx: 19.5, cy: 19.5, r: 1.9 }), s("circle.m-eye", { cx: 29.5, cy: 19.5, r: 1.9 }),
+        s("path.m-line.m-thin", { d: "M21 29 L28 29" }), s("text.m-mark", { x: 40, y: 13, text: "?" })],
+      learned: [s("circle.m-eye", { cx: 19.5, cy: 20.5, r: 2.1 }), s("circle.m-eye", { cx: 29.5, cy: 20.5, r: 2.1 }),
+        s("ellipse.m-mouth", { cx: 24.5, cy: 29, rx: 2.4, ry: 2.9 }), s("text.m-mark", { x: 40, y: 13, text: "!" })],
     }[mood];
-    return s("svg.mascot", { viewBox: "0 0 70 100", width: 70, height: 100, "aria-hidden": "true", focusable: "false" },
-      s("circle.m-head", { cx: 35, cy: 26, r: 13 }),
-      s("path.m-line", { d: "M35 6 L35 72" }),
+    return s("svg.mascot", { viewBox: "0 0 56 100", width: 56, height: 100, "aria-hidden": "true", focusable: "false" },
+      s("circle.m-head", { cx: 24.5, cy: 24, r: 13 }),
       face,
-      arms.map((d) => s("path.m-line", { d })),
-      s("path.m-line", { d: "M23 94 L35 72 L47 94" }));
+      body.map((d) => s("path.m-line", { d })),
+      s("path.m-line", { d: "M13 94 L24 70 L35 94" }));
   }
 
   // The verifier after a counterexample, saying what it learned from it; null when the
