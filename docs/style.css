@@ -768,11 +768,11 @@ body.kiosk .wrap { max-width: 1500px; }
 .mascot .m-thin { stroke-width: 2; }
 .mascot .m-head { fill: var(--panel); stroke: var(--route-model); stroke-width: 3; }
 .mascot .m-eye, .mascot .m-mouth { fill: var(--ink); }
-.mascot .m-hat { fill: var(--ink); }
-.mascot .m-band { fill: var(--route-model); }
+.mascot .m-hat { fill: none; stroke: var(--ink); stroke-width: 4; stroke-linecap: square; }
+.mascot .m-band { stroke: var(--route-model); }
 .mascot .m-cape { fill: color-mix(in srgb, var(--route-model) 30%, transparent); stroke: var(--route-model); stroke-width: 1.5; stroke-linejoin: round; }
-.mascot .m-monocle { fill: color-mix(in srgb, var(--accent) 15%, transparent); stroke: var(--ink); stroke-width: 1.6; }
-.mascot .m-chain { fill: none; stroke: var(--muted); stroke-width: 1; stroke-dasharray: 1.5 1.5; }
+.mascot .m-glass circle { fill: color-mix(in srgb, var(--accent) 22%, transparent); stroke: var(--ink); stroke-width: 2.5; }
+.mascot .m-glass path { fill: none; stroke: var(--ink); stroke-width: 2.5; stroke-linecap: round; }
 .mascot .m-mark { font-family: var(--sans); font-size: 18px; font-weight: 800; fill: var(--route-model); }
 .says-learned { margin: 0.9rem 0 0.4rem; }
 .bubble {

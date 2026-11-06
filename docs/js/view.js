@@ -1054,9 +1054,11 @@
 
   // The verifier as a dapper logician: a body shaped like a double turnstile ⊨
   // ("satisfies"), arms pointing at its claim in the speech bubble, on ∧ legs, with a
-  // top hat, a monocle and a small cape. The mood: 0 smug (the start); 1 hat tipped,
-  // an eyebrow up (midway); 2 scratching under its hat, with a "?" (the end); "learned"
-  // after a counterexample: arms up in a ∨, hat flying off, monocle popped, a "!".
+  // cape, a hat shaped like ∃ and a magnifying glass shaped like φ (the lens is the
+  // circle; the stroke through it runs on down as the handle). The mood: 0 smug (the
+  // start); 1 hat tipped, an eyebrow up (midway); 2 scratching under its hat, with a "?"
+  // (the end); "learned" after a counterexample: arms up in a ∨, hat flying off, the
+  // glass dropped, a "!".
   function mascot(mood) {
     const learned = mood === "learned";
     const arms = learned ? ["M34 60 L18 44", "M34 60 L50 44"]
@@ -1066,28 +1068,31 @@
       0: [s("path.m-line.m-thin", { d: "M26 35 L31 35" }), s("path.m-line.m-thin", { d: "M37 35 L42 35" }),
         s("path.m-line.m-thin", { d: "M28 42 Q34 47 40 42" })],
       1: [s("circle.m-eye", { cx: 29, cy: 35, r: 1.8 }), s("circle.m-eye", { cx: 39, cy: 35, r: 1.8 }),
-        s("path.m-line.m-thin", { d: "M36 28.5 L43 27" }), s("path.m-line.m-thin", { d: "M28.5 42 Q34 45.5 39.5 41.5" })],
+        s("path.m-line.m-thin", { d: "M36 29.5 L42.5 28" }), s("path.m-line.m-thin", { d: "M28.5 42 Q34 45.5 39.5 41.5" })],
       2: [s("circle.m-eye", { cx: 29, cy: 34, r: 1.8 }), s("circle.m-eye", { cx: 39, cy: 34, r: 1.8 }),
         s("path.m-line.m-thin", { d: "M30 43 Q34 41 38 43" })],
       learned: [s("circle.m-eye", { cx: 29, cy: 34.5, r: 2.1 }), s("circle.m-eye", { cx: 39, cy: 34.5, r: 2.1 }),
         s("ellipse.m-mouth", { cx: 34, cy: 42.5, rx: 2.4, ry: 3 })],
     }[mood];
-    const hatAt = { 0: "", 1: "rotate(-12 34 22)", 2: "rotate(10 34 22) translate(0 -3)", learned: "translate(14 -4) rotate(28 34 16)" }[mood];
-    const monocle = learned
-      ? [s("circle.m-monocle", { cx: 57, cy: 46, r: 4.5 }), s("path.m-chain", { d: "M53 48 Q47 56 43 51" })]
-      : [s("circle.m-monocle", { cx: 39, cy: 35, r: 4.8 }), s("path.m-chain", { d: "M43.6 36.5 Q47 46 42 50" })];
+    const hatAt = { 0: "", 1: "rotate(-12 34 22)", 2: "rotate(10 34 22) translate(0 -3)", learned: "translate(9 3) rotate(22 34 16)" }[mood];
+    // The φ glass: lens centre (x, y), handle down to the hand, all turned by rot.
+    const glass = (x, y, hand, rot) => s("g.m-glass", { transform: rot ? "rotate(" + rot + " " + x + " " + y + ")" : null },
+      s("circle", { cx: x, cy: y, r: 7.5 }),
+      s("path", { d: "M" + x + " " + (y - 11) + " L" + x + " " + hand }));
+    const glassAt = learned ? glass(60, 100, 108, 70) : mood === 2 ? glass(58, 51, 69) : glass(58, 40, 58);
     const mark = mood === 2 ? "?" : learned ? "!" : null;
     return s("svg.mascot", { viewBox: "0 0 80 110", width: 80, height: 110, "aria-hidden": "true", focusable: "false" },
       s("path.m-cape", { d: learned ? "M33 52 C22 58 12 70 6 92 L22 88 L33 74 Z" : "M33 52 C24 62 16 78 12 100 L27 94 L33 76 Z" }),
       s("circle.m-head", { cx: 34, cy: 36, r: 12 }),
-      face, mood === 0 || mood === 1 || learned ? monocle : null,
+      face,
       s("path.m-line", { d: "M34 48 L34 78" }),
       arms.map((d) => s("path.m-line", { d })),
+      glassAt,
       s("path.m-line", { d: "M18 100 L23 100 L34 78 L45 100 L50 100" }),
+      // ∃: the right-hand stroke, then the crown, the band and the brim.
       s("g", { transform: hatAt },
-        s("rect.m-hat", { x: 26, y: 6, width: 16, height: 17, rx: 1.5 }),
-        s("rect.m-band", { x: 26, y: 17, width: 16, height: 4 }),
-        s("path.m-line", { d: "M20 24 L48 24" })),
+        s("path.m-hat", { d: "M43 5 L43 24 M27 5 L43 5 M22 24 L46 24" }),
+        s("path.m-hat.m-band", { d: "M29 14.5 L43 14.5" })),
       mark ? s("text.m-mark", { x: mood === 2 ? 62 : 64, y: mood === 2 ? 18 : 42, text: mark }) : null);
   }
 
