@@ -1056,22 +1056,19 @@
   // ("satisfies"), arms pointing at its claim in the speech bubble, on ∧ legs, with a
   // cape, a hat shaped like ∃ and a magnifying glass shaped like φ (the lens is the
   // circle; the stroke through it runs on down as the handle). The mood: 0 smug, one
-  // eye squinting and one wide, inspecting (the start); 1 hat tipped, an eyebrow up
-  // over the wide eye (midway); 2 scratching under its hat, with a "?"
+  // eye shut and one open (the start); 1 hat tipped, an eyebrow up (midway); 2 scratching under its hat, with a "?"
   // (the end); "learned" after a counterexample: arms up in a ∨, hat flying off, the
   // glass dropped, a "!".
   function mascot(mood) {
     const learned = mood === "learned";
-    // One wide, inspecting eye: an open ring with its pupil.
-    const bigEye = (x, y) => [s("circle.m-bigeye", { cx: x, cy: y, r: 4 }), s("circle.m-eye", { cx: x + 0.6, cy: y + 0.4, r: 2 })];
     const arms = learned ? ["M34 60 L18 44", "M34 60 L50 44"]
       : mood === 2 ? ["M34 69 L56 69", "M34 58 L50 52 L46 27"]
       : ["M34 58 L56 58", "M34 69 L56 69"];
     const face = {
-      0: [s("path.m-line.m-thin", { d: "M25.5 35 L31 35" }), bigEye(39.5, 34.5),
+      0: [s("path.m-line.m-thin", { d: "M26 35 L31 35" }), s("circle.m-eye", { cx: 39, cy: 35, r: 1.8 }),
         s("path.m-line.m-thin", { d: "M28 42.5 Q34 47 40 42.5" })],
-      1: [s("circle.m-eye", { cx: 28.5, cy: 35, r: 1.8 }), bigEye(39.5, 34.5),
-        s("path.m-line.m-thin", { d: "M35.5 27.5 L43.5 26" }), s("path.m-line.m-thin", { d: "M28.5 42.5 Q34 45.5 39.5 42" })],
+      1: [s("circle.m-eye", { cx: 29, cy: 35, r: 1.8 }), s("circle.m-eye", { cx: 39, cy: 35, r: 1.8 }),
+        s("path.m-line.m-thin", { d: "M36 29.5 L42.5 28" }), s("path.m-line.m-thin", { d: "M28.5 42.5 Q34 45.5 39.5 42" })],
       2: [s("circle.m-eye", { cx: 29, cy: 34, r: 1.8 }), s("circle.m-eye", { cx: 39, cy: 34, r: 1.8 }),
         s("path.m-line.m-thin", { d: "M30 43 Q34 41 38 43" })],
       learned: [s("circle.m-eye", { cx: 29, cy: 34.5, r: 2.1 }), s("circle.m-eye", { cx: 39, cy: 34.5, r: 2.1 }),
