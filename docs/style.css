@@ -768,6 +768,7 @@ body.kiosk .wrap { max-width: 1500px; }
 .mascot .m-thin { stroke-width: 2; }
 .mascot .m-head { fill: var(--panel); stroke: var(--route-model); stroke-width: 3; }
 .mascot .m-eye, .mascot .m-mouth { fill: var(--ink); }
+.mascot .m-bigeye { fill: var(--paper); stroke: var(--ink); stroke-width: 1.8; }
 .mascot .m-hat { fill: none; stroke: var(--ink); stroke-width: 4; stroke-linecap: square; }
 .mascot .m-band { stroke: var(--route-model); }
 .mascot .m-cape { fill: color-mix(in srgb, var(--route-model) 30%, transparent); stroke: var(--route-model); stroke-width: 1.5; stroke-linejoin: round; }
