@@ -1052,36 +1052,34 @@
     return own || (vs.default && vs.default[v]) || null;
   }
 
-  // The verifier as a small cartoon owl holding a magnifying glass, with ∀ ("for all")
-  // on its chest: a verifier answers for every case at once. Its face follows the mood:
-  // 0 sure of itself (the start), 1 sure but quizzical (midway), 2 wondering (the end),
-  // "learned" wide-eyed after a counterexample.
+  // The verifier as a stick figure drawn from logic symbols: a φ for the head (its
+  // stroke runs on down as the spine), a ⊤ for shoulders and arms, a ∧ for legs. The
+  // mood shows in the arms and face: 0 arms out, sure of itself (the start); 1 one arm
+  // raised, making a point (midway); 2 scratching its head, wondering (the end);
+  // "learned" both arms up in a ∨ after a counterexample.
   function mascot(mood) {
-    const up = mood === 2 ? -3 : 0, wide = mood === "learned";
-    const er = wide ? 11.5 : 10.5, pr = wide ? 5.5 : 4.5;
-    const brows = {
-      0: [s("path.m-line", { d: "M21 33 Q31 29 40 33" }), s("path.m-line", { d: "M44 33 Q53 29 63 33" })],
-      1: [s("path.m-line", { d: "M22 30 L40 32" }), s("path.m-line", { d: "M44 30 Q53 23 62 28" })],
-      2: [s("path.m-line", { d: "M22 28 Q31 24 39 28" }), s("path.m-line", { d: "M45 28 Q53 24 62 28" }), s("text.m-mark", { x: 70, y: 16, text: "?" })],
-      learned: [s("path.m-line", { d: "M22 25 Q31 20 39 25" }), s("path.m-line", { d: "M45 25 Q53 20 62 25" }), s("text.m-mark", { x: 70, y: 16, text: "!" })],
+    const arms = {
+      0: ["M17 50 L53 50"],
+      1: ["M17 50 L35 50", "M35 50 L52 36"],
+      2: ["M17 50 L35 50", "M35 50 L53 45 L50 30"],
+      learned: ["M35 50 L19 33", "M35 50 L51 33"],
     }[mood];
-    // A sure owl's eyes are half closed: a lid over the top of each.
-    const lids = mood === 0 ? [32, 52].map((cx) => s("path.m-lid", { d: "M" + (cx - er) + " 38 A" + er + " " + er + " 0 0 1 " + (cx + er) + " 38 Z" })) : [];
-    const beak = wide
-      ? [s("path.m-beak", { d: "M37 50 L47 50 L42 54 Z" }), s("path.m-beak", { d: "M38.5 56 L45.5 56 L42 60 Z" })]
-      : [s("path.m-beak", { d: "M37 50 L47 50 L42 57 Z" })];
-    return s("svg.mascot", { viewBox: "0 0 90 100", width: 90, height: 100, "aria-hidden": "true", focusable: "false" },
-      s("path.m-body", { d: "M22 28 L18 10 L33 20 Q42 17 51 20 L66 10 L62 28 Q72 40 72 58 C72 82 60 94 42 94 C24 94 12 82 12 58 Q12 40 22 28 Z" }),
-      s("path.m-line", { d: "M16 58 Q10 72 20 82" }),
-      s("ellipse.m-belly", { cx: 42, cy: 75, rx: 15, ry: 13 }),
-      s("text.m-forall", { x: 42, y: 82, "text-anchor": "middle", text: "∀" }),
-      [32, 52].map((cx) => s("circle.m-eyeball", { cx, cy: 40, r: er })),
-      [32, 52].map((cx) => s("circle.m-eye", { cx: cx + (mood === 1 ? 1.5 : 0), cy: 41 + up, r: pr })),
-      [32, 52].map((cx) => s("circle.m-glint", { cx: cx + 1.8 + (mood === 1 ? 1.5 : 0), cy: 39 + up, r: 1.5 })),
-      lids, brows, beak,
-      s("path.m-line", { d: "M64 62 Q70 60 72 54" }),
-      s("circle.m-lens", { cx: 77, cy: 47, r: 8 }),
-      s("path.m-feet", { d: "M33 94 L31 98 M35 94 L35 98 M37 94 L39 98 M47 94 L45 98 M49 94 L49 98 M51 94 L53 98" }));
+    const face = {
+      0: [s("path.m-line.m-thin", { d: "M26 23 L32 23" }), s("path.m-line.m-thin", { d: "M38 23 L44 23" }),
+        s("path.m-line.m-thin", { d: "M28 31 Q35 37 42 31" })],
+      1: [s("circle.m-eye", { cx: 29, cy: 24, r: 2 }), s("circle.m-eye", { cx: 41, cy: 24, r: 2 }),
+        s("path.m-line.m-thin", { d: "M37 18 L44 16" }), s("path.m-line.m-thin", { d: "M29 32 Q35 35 41 31" })],
+      2: [s("circle.m-eye", { cx: 29, cy: 22, r: 2 }), s("circle.m-eye", { cx: 41, cy: 22, r: 2 }),
+        s("path.m-line.m-thin", { d: "M31 32 L39 32" }), s("text.m-mark", { x: 54, y: 16, text: "?" })],
+      learned: [s("circle.m-eye", { cx: 29, cy: 23, r: 2.2 }), s("circle.m-eye", { cx: 41, cy: 23, r: 2.2 }),
+        s("ellipse.m-mouth", { cx: 35, cy: 32, rx: 2.6, ry: 3 }), s("text.m-mark", { x: 54, y: 16, text: "!" })],
+    }[mood];
+    return s("svg.mascot", { viewBox: "0 0 70 100", width: 70, height: 100, "aria-hidden": "true", focusable: "false" },
+      s("circle.m-head", { cx: 35, cy: 26, r: 13 }),
+      s("path.m-line", { d: "M35 6 L35 72" }),
+      face,
+      arms.map((d) => s("path.m-line", { d })),
+      s("path.m-line", { d: "M23 94 L35 72 L47 94" }));
   }
 
   // The verifier after a counterexample, saying what it learned from it; null when the
